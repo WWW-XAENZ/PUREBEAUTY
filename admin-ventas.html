@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas | Panel Admin | Pure Beauty</title>
+    <meta name="description" content="Registro de ventas - Pure Beauty by Yuliana Silva">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .day-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .day-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .day-card.today {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-color: #81C784;
+        }
+        
+        .day-card.selected {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);
+            border-color: var(--primary);
+        }
+        
+        .day-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        
+        .day-number {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+        
+        .day-total {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        
+        .day-card.today .day-total {
+            color: #1B5E20;
+        }
+        
+        .sale-item {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sale-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+        
+        .sale-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        
+        .sale-amount {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            text-align: right;
+        }
+        
+        .sale-actions {
+            margin-top: 8px;
+        }
+        
+        .btn-delete {
+            padding: 6px 12px;
+            background: #FFEBEE;
+            color: #C62828;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-delete:hover {
+            background: #EF9A9A;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-box {
+            background: linear-gradient(135deg, var(--secondary) 0%, white 100%);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-box.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+        
+        .stat-box.active h3,
+        .stat-box.active .amount {
+            color: white;
+        }
+        
+        .stat-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-box .amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        
+        /* Selector de mes */
+        .month-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border);
+        }
+        
+        .month-selector label {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1.1rem;
+        }
+        
+        .month-selector select {
+            padding: 12px 20px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            color: var(--text);
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+            flex: 1;
+        }
+        
+        .month-selector select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-ver-mes {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-ver-mes:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 168, 216, 0.4);
+        }
+        
+        .btn-ver-mes::before {
+            content: "Ver ";
+        }
+        
+        /* Modal de Resumen del Mes */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-resumen {
+            background: white;
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-family: var(--font-heading);
+        }
+        
+        .modal-header p {
+            margin: 8px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .modal-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .modal-close-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .resumen-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .resumen-item {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            border: 2px solid var(--border);
+            transition: all 0.2s;
+        }
+        
+        .resumen-item:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+        
+        .resumen-item.destacado {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary) 100%);
+            border-color: var(--primary);
+        }
+        
+        .resumen-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .resumen-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            font-family: var(--font-heading);
+        }
+        
+        .resumen-item.destacado .resumen-value {
+            color: var(--primary-dark);
+            font-size: 2.2rem;
+        }
+        
+        .ventas-por-dia {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid var(--border);
+        }
+        
+        .ventas-por-dia h4 {
+            margin: 0 0 15px 0;
+            color: var(--text);
+            font-size: 1.1rem;
+        }
+        
+        .dia-venta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+        }
+        
+        .dia-venta.mejor-dia {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-color: #81C784;
+        }
+        
+        .dia-nombre {
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .dia-monto {
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+        
+        .modal-footer {
+            padding: 20px 30px;
+            background: var(--secondary);
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .btn-cerrar-modal {
+            padding: 12px 40px;
+            background: var(--text);
+            color: white;
+            border: none;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-cerrar-modal:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        /* Week Navigation Buttons */
+        .btn-nav-week {
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text);
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .btn-nav-week:hover {
+            border-color: var(--primary);
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .btn-nav-week.btn-today {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-color: var(--primary-dark);
+        }
+        
+        .btn-nav-week.btn-today:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 168, 216, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .week-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .resumen-grid {
+                grid-template-columns: 1fr;
+            }
+            .month-selector {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn-ver-mes {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="brand">
+                    <img src="logo.png" alt="Pure Beauty Logo" class="site-logo">
+                    <div class="brand-info">
+                        <h1>Pure Beauty <small>by Yuliana Silva</small></h1>
+                    </div>
+                </div>
+                <nav>
+                    <a href="index.html">Inicio</a>
+                    <a href="productos.html">Productos</a>
+                    <a href="contacto.html">Contacto</a>
+                </nav>
+                <button id="headerLogout" class="btn btn-logout" style="display: none;">Cerrar Sesion</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="closeLogin" class="modal-close">x</button>
+                <h3>Bienvenida, Yuliana</h3>
+                <p class="modal-subtitle">Ingresa tu contrasena para acceder.</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="adminPass">Contrasena</label>
+                        <input type="password" id="adminPass" placeholder="********" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Entrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Navigation -->
+        <section id="adminPanel" style="display: none; margin-top: 20px;">
+            <div style="background: var(--secondary); padding: 20px; border-radius: var(--radius-md); margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <h2 style="margin: 0; font-size: 1.5rem;">Panel de Administracion</h2>
+                    <nav style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="admin.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Productos</a>
+                        <a href="admin-encargos.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Encargos</a>
+                        <a href="admin-deudores.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Deudores</a>
+                        <a href="admin-deudas.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Mis Deudas</a>
+                        <a href="admin-ventas.html" class="btn btn-primary" style="font-size: 0.9rem; padding: 10px 20px;">Ventas</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Ventas Section -->
+            <div class="admin-panel">
+                <h3 style="margin-bottom: 25px; font-size: 1.5rem;">Control de Ventas</h3>
+
+                <!-- Selector de Mes con Botón -->
+                <div class="month-selector">
+                    <label for="mesSelector">Seleccionar mes:</label>
+                    <select id="mesSelector">
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                    <button onclick="abrirModalResumen()" class="btn-ver-mes">Ver Resumen del Mes</button>
+                </div>
+
+                <!-- Stats Rápidos -->
+                <div class="stats-row">
+                    <div class="stat-box" onclick="verPeriodo('hoy')">
+                        <h3>Hoy</h3>
+                        <div class="amount" id="statHoy">$0</div>
+                    </div>
+                    <div class="stat-box" onclick="verPeriodo('semana')">
+                        <h3>Esta Semana</h3>
+                        <div class="amount" id="statSemana">$0</div>
+                    </div>
+                    <div class="stat-box" onclick="verPeriodo('mes')">
+                        <h3>Mes Actual</h3>
+                        <div class="amount" id="statMes">$0</div>
+                    </div>
+                    <div class="stat-box" onclick="verPeriodo('todo')">
+                        <h3>Total Histórico</h3>
+                        <div class="amount" id="statTodo">$0</div>
+                    </div>
+                </div>
+
+                <!-- Week Navigation -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                    <div class="admin-section-title" style="margin: 0;">
+                        <span id="weekTitle">Semana Actual</span> - Selecciona un dia
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button onclick="semanaAnterior()" class="btn-nav-week" title="Semana Anterior">Anterior</button>
+                        <select id="weekSelector" onchange="seleccionarSemana(this.value)" style="padding: 8px 12px; border: 2px solid var(--border); border-radius: var(--radius-md); font-size: 0.9rem; cursor: pointer; min-width: 180px;">
+                            <!-- Weeks generated by JS -->
+                        </select>
+                        <button onclick="semanaSiguiente()" class="btn-nav-week" title="Semana Siguiente">Siguiente</button>
+                        <button onclick="irASemanaActual()" class="btn-nav-week btn-today" title="Ir a Inicio">Inicio</button>
+                    </div>
+                </div>
+                
+                <!-- Week Calendar -->
+                <div class="week-grid" id="weekGrid">
+                    <!-- Days generated by JS -->
+                </div>
+                
+                <!-- Selected Day Sales -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                    <div>
+                        <div class="admin-section-title">Registrar Venta - <span id="selectedDateLabel">Hoy</span></div>
+                        <form id="ventaForm">
+                            <input type="hidden" id="ventaFecha" required>
+                            <div class="form-group">
+                                <label for="ventaProducto">Producto *</label>
+                                <input type="text" id="ventaProducto" placeholder="" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="ventaCantidad">Cantidad *</label>
+                                    <input type="number" id="ventaCantidad" value="1" min="1" required onchange="calcularTotal()" onkeyup="calcularTotal()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="ventaPrecioUnitario">Precio Unitario (COP) *</label>
+                                    <input type="number" id="ventaPrecioUnitario" placeholder="" min="0" step="100" required onchange="calcularTotal()" onkeyup="calcularTotal()">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="ventaMonto">Total (COP)</label>
+                                <input type="number" id="ventaMonto" placeholder="0" min="0" step="100" readonly style="background: var(--secondary); font-weight: 700; color: var(--primary-dark);">
+                            </div>
+                            <div class="form-group">
+                                <label for="ventaCliente">Cliente (Opcional)</label>
+                                <input type="text" id="ventaCliente" placeholder="Nombre del cliente">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Registrar Venta</button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="admin-section-title">Ventas del Periodo - <span id="listDateLabel">Hoy</span></div>
+                        <div id="daySalesList" style="max-height: 400px; overflow-y: auto;">
+                            <p style="color: var(--text-muted); text-align: center; padding: 40px 20px;">Selecciona un periodo para ver las ventas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE RESUMEN DEL MES -->
+    <div id="modalResumen" class="modal-overlay">
+        <div class="modal-resumen">
+            <div class="modal-header">
+                <h3 id="modalTituloMes">Resumen del Mes</h3>
+                <p id="modalSubtitulo">Detalle completo de ventas</p>
+                <button onclick="cerrarModalResumen()" class="modal-close-btn">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Total Principal -->
+                <div class="resumen-item destacado" style="margin-bottom: 20px;">
+                    <div class="resumen-label">Total Vendido</div>
+                    <div class="resumen-value" id="modalTotal">$0</div>
+                </div>
+                
+                <!-- Grid de estadísticas -->
+                <div class="resumen-grid">
+                    <div class="resumen-item">
+                        <div class="resumen-label">Cantidad de Ventas</div>
+                        <div class="resumen-value" id="modalCantidad">0</div>
+                    </div>
+                    <div class="resumen-item">
+                        <div class="resumen-label">Productos Vendidos</div>
+                        <div class="resumen-value" id="modalProductos">0</div>
+                    </div>
+                    <div class="resumen-item">
+                        <div class="resumen-label">Promedio por Venta</div>
+                        <div class="resumen-value" id="modalPromedio">$0</div>
+                    </div>
+                    <div class="resumen-item">
+                        <div class="resumen-label">Días con Ventas</div>
+                        <div class="resumen-value" id="modalDias">0</div>
+                    </div>
+                </div>
+                
+                <!-- Ventas por día -->
+                <div class="ventas-por-dia">
+                    <h4>Ventas por Día</h4>
+                    <div id="modalVentasPorDia">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="cerrarModalResumen()" class="btn-cerrar-modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <div class="footer-brand"> <span>Pure Beauty</span> by Yuliana Silva</div>
+                    <div class="footer-tagline">Panel de administracion</div>
+                </div>
+                <div id="adminStatus" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <span id="statusText">Sesion no iniciada</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="scripts.js"></script>
+    <script>
+        // Ventas specific code
+        (function() {
+            const STORAGE_KEY = 'pb_ventas';
+            
+            let selectedDate = new Date().toISOString().split('T')[0];
+            let mesSeleccionado = new Date().toISOString().slice(0, 7);
+            let periodoActual = 'hoy';
+            let semanaOffset = 0; // 0 = semana actual, -1 = semana anterior, 1 = semana siguiente
+
+            const nombresMeses = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+
+            const nombresDias = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+
+            function getVentas() {
+                try {
+                    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveVentas(ventas) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(ventas));
+            }
+
+            function formatPrice(price) {
+                const num = parseInt(price || 0);
+                return '$' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            }
+
+            function getWeekDates(offset = 0) {
+                const today = new Date();
+                const dayOfWeek = today.getDay();
+                const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                const monday = new Date(today.setDate(diff));
+                
+                // Apply week offset
+                monday.setDate(monday.getDate() + (offset * 7));
+
+                const week = [];
+                for (let i = 0; i < 7; i++) {
+                    const day = new Date(monday);
+                    day.setDate(monday.getDate() + i);
+                    week.push(day);
+                }
+                return week;
+            }
+
+            function getSalesForDate(dateStr) {
+                return getVentas().filter(v => v.fecha === dateStr);
+            }
+
+            function getTotalForDate(dateStr) {
+                return getSalesForDate(dateStr).reduce((sum, v) => sum + (parseInt(v.monto) || 0), 0);
+            }
+
+            // ============================================
+            // NAVEGACIÓN DE SEMANAS
+            // ============================================
+
+            window.semanaAnterior = function() {
+                semanaOffset--;
+                actualizarVistaSemana();
+            };
+
+            window.semanaSiguiente = function() {
+                semanaOffset++;
+                actualizarVistaSemana();
+            };
+
+            window.irASemanaActual = function() {
+                semanaOffset = 0;
+                selectedDate = new Date().toISOString().split('T')[0];
+                document.getElementById('ventaFecha').value = selectedDate;
+                actualizarVistaSemana();
+                selectDate(selectedDate);
+            };
+
+            window.seleccionarSemana = function(valor) {
+                if (!valor) return;
+                const [offset, fechaInicio] = valor.split('|');
+                semanaOffset = parseInt(offset);
+                actualizarVistaSemana();
+            };
+
+            function actualizarVistaSemana() {
+                renderWeekGrid();
+                renderWeekSelector();
+                updateWeekTitle();
+                if (periodoActual === 'semana') {
+                    renderDaySales();
+                }
+            }
+
+            function updateWeekTitle() {
+                const weekDates = getWeekDates(semanaOffset);
+                const inicioSemana = weekDates[0];
+                const finSemana = weekDates[6];
+                
+                const formatoInicio = inicioSemana.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+                const formatoFin = finSemana.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+                
+                const esSemanaActual = semanaOffset === 0;
+                document.getElementById('weekTitle').textContent =
+                    esSemanaActual ? 'Semana Actual' : `Semana: ${formatoInicio} - ${formatoFin}`;
+            }
+
+            function renderWeekSelector() {
+                const selector = document.getElementById('weekSelector');
+                if (!selector) return;
+
+                // Generate options para las ultimas 8 semanas, semana actual, y proximas 4 semanas
+                selector.innerHTML = '<option value="">Seleccionar semana...</option>';
+                
+                for (let i = -8; i <= 4; i++) {
+                    const weekDates = getWeekDates(i);
+                    const inicioSemana = weekDates[0];
+                    const finSemana = weekDates[6];
+                    
+                    const formatoInicio = inicioSemana.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+                    const formatoFin = finSemana.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const esActual = i === 0;
+                    const textoSemana = esActual ?
+                        `Semana actual (${formatoInicio} - ${formatoFin})` :
+                        `${formatoInicio} - ${formatoFin}`;
+                    
+                    const option = document.createElement('option');
+                    option.value = `${i}|${inicioSemana.toISOString().split('T')[0]}`;
+                    option.textContent = textoSemana;
+                    
+                    if (i === semanaOffset) {
+                        option.selected = true;
+                    }
+                    
+                    selector.appendChild(option);
+                }
+            }
+
+            // ============================================
+            // SELECTOR DE MESES
+            // ============================================
+
+            function inicializarSelectorMeses() {
+                const selector = document.getElementById('mesSelector');
+                const hoy = new Date();
+                
+                // Obtener meses únicos de ventas
+                const ventas = getVentas();
+                const mesesConVentas = [...new Set(ventas.map(v => v.fecha.slice(0, 7)))].sort().reverse();
+                
+                // Agregar meses con ventas
+                mesesConVentas.forEach(mes => {
+                    const [anio, mesNum] = mes.split('-');
+                    const option = document.createElement('option');
+                    option.value = mes;
+                    option.textContent = `${nombresMeses[parseInt(mesNum) - 1]} ${anio}`;
+                    selector.appendChild(option);
+                });
+                
+                // Si no hay ventas, agregar mes actual
+                if (mesesConVentas.length === 0) {
+                    const mesActual = hoy.toISOString().slice(0, 7);
+                    const option = document.createElement('option');
+                    option.value = mesActual;
+                    option.textContent = `${nombresMeses[hoy.getMonth()]} ${hoy.getFullYear()}`;
+                    selector.appendChild(option);
+                }
+                
+                // Agregar meses anteriores (ultimos 12 meses)
+                for (let i = 0; i < 12; i++) {
+                    const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+                    const mes = fecha.toISOString().slice(0, 7);
+                    
+                    if (![...selector.options].some(opt => opt.value === mes)) {
+                        const option = document.createElement('option');
+                        option.value = mes;
+                        option.textContent = `${nombresMeses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+                        selector.appendChild(option);
+                    }
+                }
+                
+                selector.value = hoy.toISOString().slice(0, 7);
+            }
+
+            // ============================================
+            // MODAL DE RESUMEN
+            // ============================================
+
+            window.abrirModalResumen = function() {
+                const selector = document.getElementById('mesSelector');
+                mesSeleccionado = selector.value;
+                
+                const [anio, mesNum] = mesSeleccionado.split('-');
+                const nombreMes = nombresMeses[parseInt(mesNum) - 1];
+                
+                // Actualizar título del modal
+                document.getElementById('modalTituloMes').textContent = `${nombreMes} ${anio}`;
+                document.getElementById('modalSubtitulo').textContent = `Resumen completo de ventas`;
+                
+                // Calcular estadísticas
+                const ventas = getVentas().filter(v => v.fecha.startsWith(mesSeleccionado));
+                
+                const total = ventas.reduce((sum, v) => sum + (parseInt(v.monto) || 0), 0);
+                const cantidadVentas = ventas.length;
+                const productosVendidos = ventas.reduce((sum, v) => sum + (parseInt(v.cantidad) || 1), 0);
+                const promedio = cantidadVentas > 0 ? total / cantidadVentas : 0;
+                
+                // Agrupar por día
+                const ventasPorDia = {};
+                ventas.forEach(v => {
+                    if (!ventasPorDia[v.fecha]) ventasPorDia[v.fecha] = 0;
+                    ventasPorDia[v.fecha] += (parseInt(v.monto) || 0);
+                });
+                
+                const diasConVentas = Object.keys(ventasPorDia).length;
+                
+                // Encontrar mejor día
+                let mejorDia = null;
+                let maxMonto = 0;
+                Object.entries(ventasPorDia).forEach(([fecha, monto]) => {
+                    if (monto > maxMonto) {
+                        maxMonto = monto;
+                        mejorDia = fecha;
+                    }
+                });
+                
+                // Actualizar valores en el modal
+                document.getElementById('modalTotal').textContent = formatPrice(total);
+                document.getElementById('modalCantidad').textContent = cantidadVentas;
+                document.getElementById('modalProductos').textContent = productosVendidos;
+                document.getElementById('modalPromedio').textContent = formatPrice(promedio);
+                document.getElementById('modalDias').textContent = diasConVentas;
+                
+                // Llenar ventas por día
+                const containerVentasPorDia = document.getElementById('modalVentasPorDia');
+                containerVentasPorDia.innerHTML = '';
+                
+                const fechasOrdenadas = Object.keys(ventasPorDia).sort().reverse();
+                
+                if (fechasOrdenadas.length === 0) {
+                    containerVentasPorDia.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No hay ventas en este mes</p>';
+                } else {
+                    fechasOrdenadas.forEach(fecha => {
+                        const monto = ventasPorDia[fecha];
+                        const fechaObj = new Date(fecha);
+                        const diaNombre = fechaObj.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric' });
+                        const esMejorDia = fecha === mejorDia;
+                        
+                        const div = document.createElement('div');
+                        div.className = `dia-venta ${esMejorDia ? 'mejor-dia' : ''}`;
+                        div.innerHTML = `
+                            <span class="dia-nombre" style="text-transform: capitalize;">${diaNombre} ${esMejorDia ? '⭐' : ''}</span>
+                            <span class="dia-monto">${formatPrice(monto)}</span>
+                        `;
+                        containerVentasPorDia.appendChild(div);
+                    });
+                }
+                
+                // Mostrar modal
+                document.getElementById('modalResumen').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            };
+
+            window.cerrarModalResumen = function() {
+                document.getElementById('modalResumen').classList.remove('active');
+                document.body.style.overflow = '';
+            };
+
+            // Cerrar modal al hacer clic fuera
+            document.getElementById('modalResumen').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    cerrarModalResumen();
+                }
+            });
+
+            // ============================================
+            // PERIODOS RÁPIDOS
+            // ============================================
+
+            window.verPeriodo = function(periodo) {
+                periodoActual = periodo;
+                
+                document.querySelectorAll('.stat-box').forEach(box => box.classList.remove('active'));
+                event.currentTarget.classList.add('active');
+                
+                renderDaySales();
+            };
+
+            // ============================================
+            // RENDERIZADO
+            // ============================================
+
+            function renderWeekGrid() {
+                const grid = document.getElementById('weekGrid');
+                if (!grid) return;
+
+                const weekDates = getWeekDates(semanaOffset);
+                const todayStr = new Date().toISOString().split('T')[0];
+                const dayNames = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+
+                grid.innerHTML = '';
+                weekDates.forEach((date, index) => {
+                    const dateStr = date.toISOString().split('T')[0];
+                    const total = getTotalForDate(dateStr);
+                    const isToday = dateStr === todayStr;
+                    const isSelected = dateStr === selectedDate;
+
+                    const card = document.createElement('div');
+                    card.className = `day-card ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
+                    card.style.cursor = 'pointer';
+                    card.innerHTML = `
+                        <div class="day-name">${dayNames[index]}</div>
+                        <div class="day-number">${date.getDate()}</div>
+                        <div class="day-total">${formatPrice(total)}</div>
+                    `;
+                    card.onclick = () => selectDate(dateStr);
+                    grid.appendChild(card);
+                });
+            }
+
+            function selectDate(dateStr) {
+                selectedDate = dateStr;
+                document.getElementById('ventaFecha').value = dateStr;
+
+                const dateObj = new Date(dateStr);
+                const hoyStr = new Date().toISOString().split('T')[0];
+                const dateLabel = dateStr === hoyStr ? 'Hoy' : dateObj.toLocaleDateString('es-CO', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                });
+
+                document.getElementById('selectedDateLabel').textContent = dateLabel;
+                
+                periodoActual = 'dia';
+                renderDaySales();
+            }
+
+            function renderDaySales() {
+                const list = document.getElementById('daySalesList');
+                if (!list) return;
+
+                let ventas = [];
+                let titulo = '';
+
+                switch(periodoActual) {
+                    case 'hoy': {
+                        const hoyStr = new Date().toISOString().split('T')[0];
+                        ventas = getVentas().filter(v => v.fecha === hoyStr);
+                        titulo = 'Hoy';
+                        break;
+                    }
+                        
+                    case 'semana': {
+                        const weekDates = getWeekDates(semanaOffset);
+                        const fechasSemana = weekDates.map(d => d.toISOString().split('T')[0]);
+                        ventas = getVentas().filter(v => fechasSemana.includes(v.fecha));
+                        const inicioSemana = weekDates[0].toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+                        const finSemana = weekDates[6].toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+                        titulo = semanaOffset === 0 ? 'Esta Semana' : `Semana ${inicioSemana} - ${finSemana}`;
+                        break;
+                    }
+                        
+                    case 'mes': {
+                        const mesActual = new Date().toISOString().slice(0, 7);
+                        ventas = getVentas().filter(v => v.fecha.startsWith(mesActual));
+                        titulo = 'Este Mes';
+                        break;
+                    }
+                        
+                    case 'todo':
+                        ventas = getVentas();
+                        titulo = 'Todo el Historial';
+                        break;
+                        
+                    case 'dia':
+                    default: {
+                        ventas = getSalesForDate(selectedDate);
+                        const dateObj = new Date(selectedDate);
+                        const hoyStr = new Date().toISOString().split('T')[0];
+                        titulo = selectedDate === hoyStr ? 'Hoy' : dateObj.toLocaleDateString('es-CO', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long'
+                        });
+                        break;
+                    }
+                }
+
+                document.getElementById('listDateLabel').textContent = titulo;
+
+                if (ventas.length === 0) {
+                    list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px 20px;">No hay ventas registradas para ${titulo.toLowerCase()}</p>`;
+                    return;
+                }
+
+                ventas.sort((a, b) => new Date(b.fechaRegistro || b.fecha) - new Date(a.fechaRegistro || a.fecha));
+
+                list.innerHTML = '';
+                
+                if (['semana', 'mes', 'todo'].includes(periodoActual)) {
+                    const ventasPorFecha = {};
+                    ventas.forEach(v => {
+                        if (!ventasPorFecha[v.fecha]) ventasPorFecha[v.fecha] = [];
+                        ventasPorFecha[v.fecha].push(v);
+                    });
+                    
+                    const fechasOrdenadas = Object.keys(ventasPorFecha).sort().reverse();
+                    
+                    fechasOrdenadas.forEach(fecha => {
+                        const fechaObj = new Date(fecha);
+                        const fechaStr = fechaObj.toLocaleDateString('es-CO', {
+                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                        });
+                        const totalDia = ventasPorFecha[fecha].reduce((sum, v) => sum + (parseInt(v.monto) || 0), 0);
+                        
+                        const dayHeader = document.createElement('div');
+                        dayHeader.style.cssText = `
+                            background: var(--secondary); padding: 10px 15px; border-radius: var(--radius-md);
+                            margin-bottom: 10px; margin-top: 20px; font-weight: 600; color: var(--primary-dark);
+                            display: flex; justify-content: space-between; align-items: center;
+                        `;
+                        dayHeader.innerHTML = `
+                            <span style="text-transform: capitalize;">${fechaStr}</span>
+                            <span>${formatPrice(totalDia)}</span>
+                        `;
+                        list.appendChild(dayHeader);
+                        
+                        ventasPorFecha[fecha].forEach((sale) => {
+                            list.appendChild(crearItemVenta(sale));
+                        });
+                    });
+                } else {
+                    ventas.forEach((sale) => {
+                        list.appendChild(crearItemVenta(sale));
+                    });
+                }
+            }
+
+            function crearItemVenta(sale) {
+                const item = document.createElement('div');
+                item.className = 'sale-item';
+                
+                const precioInfo = sale.precioUnitario ? 
+                    `<div class="sale-meta">Cantidad: ${sale.cantidad} | Precio unitario: ${formatPrice(sale.precioUnitario)}</div>` :
+                    `<div class="sale-meta">Cantidad: ${sale.cantidad}</div>`;
+                
+                const hora = sale.fechaRegistro ? 
+                    new Date(sale.fechaRegistro).toLocaleTimeString('es-CO', {hour: '2-digit', minute:'2-digit'}) : '';
+                
+                item.innerHTML = `
+                    <div class="sale-info">
+                        <h4>${sale.producto}</h4>
+                        ${precioInfo}
+                        ${sale.cliente ? `<div class="sale-meta">Cliente: ${sale.cliente}</div>` : ''}
+                        ${hora ? `<div class="sale-meta" style="font-size: 0.75rem;">${hora}</div>` : ''}
+                    </div>
+                    <div>
+                        <div class="sale-amount">${formatPrice(sale.monto)}</div>
+                        <div class="sale-actions">
+                            <button onclick="eliminarVentaDelDia('${sale.fechaRegistro}')" class="btn-delete">Eliminar</button>
+                        </div>
+                    </div>
+                `;
+                return item;
+            }
+
+            function renderStats() {
+                const ventas = getVentas();
+                const hoy = new Date();
+                const todayStr = hoy.toISOString().split('T')[0];
+                
+                const totalHoy = getTotalForDate(todayStr);
+                document.getElementById('statHoy').textContent = formatPrice(totalHoy);
+                
+                const weekDates = getWeekDates(semanaOffset);
+                let totalSemana = 0;
+                weekDates.forEach(date => {
+                    totalSemana += getTotalForDate(date.toISOString().split('T')[0]);
+                });
+                document.getElementById('statSemana').textContent = formatPrice(totalSemana);
+                
+                const mesActual = hoy.toISOString().slice(0, 7);
+                const totalMes = ventas
+                    .filter(v => v.fecha && v.fecha.startsWith(mesActual))
+                    .reduce((sum, v) => sum + (parseInt(v.monto) || 0), 0);
+                document.getElementById('statMes').textContent = formatPrice(totalMes);
+                
+                const totalTodo = ventas.reduce((sum, v) => sum + (parseInt(v.monto) || 0), 0);
+                document.getElementById('statTodo').textContent = formatPrice(totalTodo);
+            }
+
+            window.calcularTotal = function() {
+                const cantidad = parseInt(document.getElementById('ventaCantidad').value) || 1;
+                const precioUnitario = parseInt(document.getElementById('ventaPrecioUnitario').value) || 0;
+                const total = cantidad * precioUnitario;
+                document.getElementById('ventaMonto').value = total;
+            };
+
+            function initVentaForm() {
+                const form = document.getElementById('ventaForm');
+                if (!form) return;
+
+                document.getElementById('ventaFecha').value = selectedDate;
+                calcularTotal();
+
+                form.onsubmit = function(e) {
+                    e.preventDefault();
+                    
+                    const cantidad = parseInt(document.getElementById('ventaCantidad').value) || 1;
+                    const precioUnitario = parseInt(document.getElementById('ventaPrecioUnitario').value) || 0;
+                    const total = cantidad * precioUnitario;
+                    
+                    const venta = {
+                        fecha: document.getElementById('ventaFecha').value,
+                        producto: document.getElementById('ventaProducto').value.trim(),
+                        cantidad: cantidad,
+                        precioUnitario: precioUnitario,
+                        monto: total,
+                        cliente: document.getElementById('ventaCliente').value.trim(),
+                        fechaRegistro: new Date().toISOString()
+                    };
+
+                    const ventas = getVentas();
+                    ventas.push(venta);
+                    saveVentas(ventas);
+
+                    form.reset();
+                    document.getElementById('ventaFecha').value = selectedDate;
+                    calcularTotal();
+                    
+                    renderWeekGrid();
+                    renderDaySales();
+                    renderStats();
+                    
+                    // Actualizar selector si es mes nuevo
+                    const mesVenta = venta.fecha.slice(0, 7);
+                    const selector = document.getElementById('mesSelector');
+                    if (![...selector.options].some(opt => opt.value === mesVenta)) {
+                        const [anio, mesNum] = mesVenta.split('-');
+                        const option = document.createElement('option');
+                        option.value = mesVenta;
+                        option.textContent = `${nombresMeses[parseInt(mesNum) - 1]} ${anio}`;
+                        selector.insertBefore(option, selector.firstChild);
+                    }
+                    
+                    const alert = document.createElement('div');
+                    alert.style.cssText = `
+                        position: fixed; top: 20px; right: 20px; z-index: 1000;
+                        padding: 16px 24px; border-radius: 12px; font-weight: 500;
+                        background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+                        color: #1B5E20; border: 1.5px solid #81C784;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                        animation: slideIn 0.3s ease;
+                    `;
+                    alert.textContent = 'Venta registrada. Total: ' + formatPrice(total);
+                    document.body.appendChild(alert);
+                    setTimeout(() => alert.remove(), 3000);
+                };
+            }
+
+            window.eliminarVentaDelDia = function(fechaRegistro) {
+                if (!confirm('Eliminar esta venta?')) return;
+                
+                let ventas = getVentas();
+                ventas = ventas.filter(v => v.fechaRegistro !== fechaRegistro);
+                saveVentas(ventas);
+                
+                renderWeekGrid();
+                renderDaySales();
+                renderStats();
+            };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                if (document.getElementById('weekGrid')) {
+                    inicializarSelectorMeses();
+                    renderWeekSelector();
+                    updateWeekTitle();
+                    renderWeekGrid();
+                    renderStats();
+                    selectDate(selectedDate);
+                    initVentaForm();
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

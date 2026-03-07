@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos | Panel Admin | Pure Beauty</title>
+    <meta name="description" content="Gestion de productos - Pure Beauty by Yuliana Silva">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com ">
+    <link rel="preconnect" href="https://fonts.gstatic.com " crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400 ;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="brand">
+                    <img src="logo.png" alt="Pure Beauty Logo" class="site-logo">
+                    <div class="brand-info">
+                        <h1>Pure Beauty <small>by Yuliana Silva</small></h1>
+                    </div>
+                </div>
+                <nav>
+                    <a href="index.html">Inicio</a>
+                    <a href="productos.html">Productos</a>
+                    <a href="contacto.html">Contacto</a>
+                </nav>
+                <button id="headerLogout" class="btn btn-logout" style="display: none;">Cerrar Sesion</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div id="loginModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <button id="closeLogin" class="modal-close">x</button>
+                <h3>Bienvenida, Yuliana</h3>
+                <p class="modal-subtitle">Ingresa tu contrasena para acceder a tu panel de administracion.</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="adminPass">Contrasena</label>
+                        <input type="password" id="adminPass" placeholder="********" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Entrar al Panel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Admin Navigation -->
+        <section id="adminPanel" style="display: none; margin-top: 20px;">
+            <div style="background: var(--secondary); padding: 20px; border-radius: var(--radius-md); margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <h2 style="margin: 0; font-size: 1.5rem;">Panel de Administracion</h2>
+                    <nav style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <a href="admin.html" class="btn btn-primary" style="font-size: 0.9rem; padding: 10px 20px;">Productos</a>
+                        <a href="admin-encargos.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Encargos</a>
+                        <a href="admin-deudores.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Deudores</a>
+                        <a href="admin-deudas.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Mis Deudas</a>
+                        <a href="admin-ventas.html" class="btn btn-ghost" style="font-size: 0.9rem; padding: 10px 20px;">Ventas</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Welcome Message -->
+            <div style="margin-bottom: 40px; text-align: center;">
+                <h2 style="font-size: 2.2rem; margin-bottom: 8px;">Hola, Yuliana</h2>
+                <p class="text-muted" style="font-size: 1.05rem;">Aqui puedes gestionar tu catalogo de productos.</p>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions" style="margin-bottom: 40px;">
+                <button onclick="sincronizarProductos()" class="btn-sync" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white;">
+                    Sincronizar con la Nube
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalProducts">0</div>
+                    <div class="stat-label">Productos en Catalogo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="lowStock">0</div>
+                    <div class="stat-label">Productos con Stock Bajo</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="outOfStock">0</div>
+                    <div class="stat-label">Productos Agotados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalValue">$0</div>
+                    <div class="stat-label">Valor del Inventario</div>
+                </div>
+            </div>
+
+            <!-- Product Management -->
+            <div class="admin-panel" style="margin-bottom: 40px;">
+                <h3 style="margin-bottom: 30px; font-size: 1.5rem;">Gestion de Productos</h3>
+                <div class="admin-grid">
+                    <!-- Form -->
+                    <div>
+                        <div class="admin-section-title">Anadir o Editar Producto</div>
+                        <form id="adminForm">
+                            <input type="hidden" id="prodId">
+
+                            <div class="form-group">
+                                <label for="prodName">Nombre del Producto *</label>
+                                <input type="text" id="prodName" placeholder="" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="prodBrand">Marca *</label>
+                                    <input type="text" id="prodBrand" placeholder="" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prodPrice">Precio (COP) *</label>
+                                    <input type="number" id="prodPrice" placeholder="" min="0" step="1000" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prodQty">Cantidad Disponible *</label>
+                                <input type="number" id="prodQty" placeholder="" min="0" value="1" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prodImg">URL de Imagen del Producto</label>
+                                <input type="text" id="prodImg" placeholder="https://ejemplo.com/imagen.jpg ">
+                                <p class="text-muted" style="font-size: 0.85rem; margin-top: 6px;">Deja en blanco para usar una imagen por defecto</p>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prodImgFile">O Sube una Foto desde tu Dispositivo</label>
+                                <div class="file-input-wrapper">
+                                    <input type="file" id="prodImgFile" accept="image/*">
+                                    <label for="prodImgFile" class="file-input-label">
+                                        Seleccionar imagen
+                                    </label>
+                                </div>
+                                <img id="prodPreview" class="preview-image" alt="Vista previa">
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                                <button type="button" id="clearForm" class="btn btn-ghost">Limpiar Formulario</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tips -->
+                    <div>
+                        <div class="info-box">
+                            <div class="info-box-title">Consejos Utiles</div>
+                            <ul>
+                                <li>Los productos se guardan automaticamente</li>
+                                <li>Usa imagenes cuadradas para mejor resultado</li>
+                                <li>Puedes subir fotos directamente desde tu celular</li>
+                                <li>Los cambios se ven inmediatamente en la tienda</li>
+                                <li>Usa fotos con buena iluminacion para que los productos se vean mas atractivos</li>
+                                <li>Escribe descripciones cortas explicando para que sirve cada cosa</li>
+                                <li>Actualiza los precios cada vez que cambien</li>
+                                <li>Revisa la cantidad de productos para evitar vender algo que no tengas</li>
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Preview -->
+            <section style="margin-top: 60px;">
+                <div class="section-header">
+                    <div>
+                        <h3 style="font-size: 1.8rem;">Vista Previa de tu Catalogo</h3>
+                        <p class="text-muted" style="margin: 6px 0 0;">Asi ven tus clientes los productos en la tienda</p>
+                    </div>
+                </div>
+                <div id="productGrid" class="grid">
+                    <!-- Products rendered by scripts.js -->
+                </div>
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <div class="empty-state-icon">P</div>
+                    <h3>No hay productos en tu catalogo</h3>
+                    <p>Usa el formulario de arriba para agregar tu primer producto.</p>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <div class="footer-brand"> <span>Pure Beauty</span> by Yuliana Silva</div>
+                    <div class="footer-tagline">Panel de administracion exclusivo</div>
+                </div>
+                <div id="adminStatus" style="color: var(--text-muted); font-size: 0.9rem;">
+                    <span id="statusText">Sesion no iniciada</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="scripts.js"></script>
+</body>
+
+</html>
