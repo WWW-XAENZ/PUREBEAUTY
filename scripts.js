@@ -366,10 +366,9 @@ function renderProducts(searchTerm = '') {
             product.name.toLowerCase().includes(term) ||
             product.brand.toLowerCase().includes(term)
         );
-    }
-
-    if (productCount) {
-        productCount.textContent = products.length + ' productos';
+        // When searching, show flat list
+        renderProductsList(products, grid, emptyState, productCount, searchTerm, false);
+        return;
     }
 
     if (products.length === 0) {
@@ -385,6 +384,73 @@ function renderProducts(searchTerm = '') {
 
     if (emptyState) emptyState.style.display = 'none';
     grid.innerHTML = '';
+
+    // Group products by brand (case-insensitive)
+    const brands = {};
+    products.forEach(product => {
+        const brand = (product.brand || 'Sin marca').trim();
+        const brandKey = brand.toLowerCase(); // Use lowercase as key
+        const brandDisplay = brand; // Keep original for display
+        if (!brands[brandKey]) {
+            brands[brandKey] = { display: brandDisplay, products: [] };
+        }
+        brands[brandKey].products.push(product);
+    });
+
+    // Sort brands alphabetically (case-insensitive)
+    const sortedBrands = Object.keys(brands).sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+    // Update product count
+    if (productCount) {
+        productCount.textContent = products.length + ' productos en ' + sortedBrands.length + ' marcas';
+    }
+
+    // Render products grouped by brand
+    sortedBrands.forEach(brandKey => {
+        const brandData = brands[brandKey];
+        const brandProducts = brandData.products;
+        
+        // Create brand section header
+        const brandHeader = document.createElement('div');
+        brandHeader.className = 'brand-section-header';
+        brandHeader.innerHTML = `
+            <h3 style="margin: 30px 0 15px; color: var(--primary); font-size: 1.3rem; border-bottom: 2px solid var(--primary); padding-bottom: 8px;">
+                ${brandData.display.toUpperCase()}
+            </h3>
+        `;
+        grid.appendChild(brandHeader);
+
+        // Render products for this brand
+        brandProducts.forEach((product, index) => {
+            const card = createProductCard(product, index);
+            grid.appendChild(card);
+        });
+    });
+
+    if (utils.isAdmin()) {
+        updateAdminStats();
+    }
+}
+
+// Helper function to render flat list (used for search)
+function renderProductsList(products, grid, emptyState, productCount, searchTerm, groupedByBrand) {
+    if (products.length === 0) {
+        grid.innerHTML = '';
+        if (emptyState) {
+            emptyState.style.display = 'block';
+            if (searchTerm) {
+                emptyState.innerHTML = `<p>No se encontraron productos que coincidan con "${searchTerm}"</p>`;
+            }
+        }
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+    grid.innerHTML = '';
+
+    if (productCount) {
+        productCount.textContent = products.length + ' productos';
+    }
 
     products.forEach((product, index) => {
         const card = createProductCard(product, index);
@@ -429,7 +495,7 @@ function createProductCard(product, index) {
             ${badge}
         </div>
         <div class="card-body">
-            <div class="card-brand">${product.brand}</div>
+            <div class="card-brand">${(product.brand || '').toUpperCase()}</div>
             <h3>${product.name}</h3>
             <p class="card-description">Producto de alta calidad de la marca ${product.brand}.</p>
             <div class="card-footer">

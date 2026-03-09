@@ -709,6 +709,15 @@ nav a.admin-nav-link:hover {
     margin-bottom: 8px;
 }
 
+.brand-section-header {
+    grid-column: 1 / -1;
+    margin-top: 30px;
+}
+
+.brand-section-header:first-child {
+    margin-top: 0;
+}
+
 .card h3 {
     font-family: var(--font-heading);
     font-size: 1.15rem;
