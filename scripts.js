@@ -800,6 +800,7 @@ function renderEncargos() {
     if (!list) return;
     
     const encargos = getEncargos();
+    const searchTerm = document.getElementById('buscarEncargo')?.value?.toLowerCase() || '';
     
     if (encargos.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No hay encargos</p>';
@@ -809,11 +810,21 @@ function renderEncargos() {
     // Group encargos by client
     const encargosPorCliente = {};
     encargos.forEach((e, i) => {
+        // Filter by search term
+        if (searchTerm && !e.cliente.toLowerCase().includes(searchTerm)) {
+            return;
+        }
         if (!encargosPorCliente[e.cliente]) {
             encargosPorCliente[e.cliente] = [];
         }
         encargosPorCliente[e.cliente].push({ ...e, index: i });
     });
+    
+    // Handle no results after filtering
+    if (Object.keys(encargosPorCliente).length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No se encontraron encargos con ese nombre</p>';
+        return;
+    }
     
     list.innerHTML = Object.entries(encargosPorCliente).map(([cliente, encargosCliente]) => `
         <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 2px solid var(--border);">
@@ -915,6 +926,12 @@ function initEncargosForm() {
     const form = document.getElementById('encargoForm');
     if (!form) return;
     
+    // Search functionality
+    const buscarInput = document.getElementById('buscarEncargo');
+    if (buscarInput) {
+        buscarInput.addEventListener('input', renderEncargos);
+    }
+    
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -964,30 +981,71 @@ function renderDeudores() {
     if (!list) return;
     
     const deudores = getDeudores();
+    const searchTerm = document.getElementById('buscarDeudor')?.value?.toLowerCase() || '';
+    
+    // Filter by search term
+    const deudoresFiltrados = deudores.filter(d => 
+        d.nombre.toLowerCase().includes(searchTerm) ||
+        (d.telefono && d.telefono.includes(searchTerm))
+    );
+    
     const total = deudores.reduce((sum, d) => sum + (parseInt(d.monto) || 0), 0);
     
     if (totalEl) totalEl.textContent = utils.formatPrice(total);
     
-    if (deudores.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No hay deudores</p>';
+    if (deudoresFiltrados.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">' + (searchTerm ? 'No se encontraron deudores con ese nombre' : 'No hay deudores') + '</p>';
         return;
     }
     
-    list.innerHTML = deudores.map((d, i) => `
-        <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 12px; border: 1.5px solid var(--border);">
-            <div style="display: flex; justify-content: space-between;">
-                <strong>${d.nombre}</strong>
-                <strong style="color: var(--primary-dark);">${utils.formatPrice(d.monto)}</strong>
+    // Group deudores by client name (same logic as encargos)
+    const deudoresPorCliente = {};
+    deudores.forEach((d, i) => {
+        // Filter by search term
+        if (searchTerm && !d.nombre.toLowerCase().includes(searchTerm)) {
+            return;
+        }
+        if (!deudoresPorCliente[d.nombre]) {
+            deudoresPorCliente[d.nombre] = [];
+        }
+        deudoresPorCliente[d.nombre].push({ ...d, index: i });
+    });
+    
+    // Handle no results after filtering
+    if (Object.keys(deudoresPorCliente).length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">No se encontraron deudores con ese nombre</p>';
+        return;
+    }
+    
+    list.innerHTML = Object.entries(deudoresPorCliente).map(([nombre, deudoresCliente]) => {
+        const totalCliente = deudoresCliente.reduce((sum, d) => sum + (parseInt(d.monto) || 0), 0);
+        return `
+        <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 2px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
+                <strong style="font-size: 1.1rem; color: var(--primary-dark);">${nombre}</strong>
+                <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.8rem;">${utils.formatPrice(totalCliente)}</span>
             </div>
-            <div style="font-size: 0.9rem; color: var(--text-muted);">
-                <strong>Tel:</strong> ${d.telefono || 'N/A'} | ${d.fecha || 'Sin fecha'}
-            </div>
-            <div style="margin-top: 12px; display: flex; gap: 8px;">
-                <button onclick="marcarPagado(${i})" style="flex: 1; padding: 8px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">Marcar Pagado</button>
-                <button onclick="eliminarDeudor(${i})" style="padding: 8px 12px; background: #FEE; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer;">×</button>
-            </div>
+            ${deudoresCliente.map(d => `
+                <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; border: 1.5px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div style="font-size: 0.95rem; margin-bottom: 4px;">
+                                <strong>Monto:</strong> ${utils.formatPrice(d.monto)}
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                <strong>Tel:</strong> ${d.telefono || 'N/A'} | <strong>Fecha:</strong> ${d.fecha ? new Date(d.fecha).toLocaleDateString('es-CO') : 'Sin fecha'}
+                            </div>
+                            ${d.notas ? `<div style="font-size: 0.85rem; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); color: var(--text-muted);">${d.notas}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button onclick="marcarPagado(${d.index})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Marcar Pagado</button>
+                        <button onclick="eliminarDeudor(${d.index})" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer;">Eliminar</button>
+                    </div>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function eliminarDeudor(index) {
@@ -1013,6 +1071,12 @@ function initDeudoresForm() {
     
     const fechaInput = document.getElementById('deudorFecha');
     if (fechaInput) fechaInput.valueAsDate = new Date();
+    
+    // Search functionality
+    const buscarInput = document.getElementById('buscarDeudor');
+    if (buscarInput) {
+        buscarInput.addEventListener('input', renderDeudores);
+    }
     
     form.addEventListener('submit', function(e) {
         e.preventDefault();
