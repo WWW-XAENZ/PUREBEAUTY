@@ -1079,8 +1079,7 @@
                 selectedDate = dateStr;
                 document.getElementById('ventaFecha').value = dateStr;
 
-                const [year, month, day] = dateStr.split('-');
-                const dateObj = new Date(year, month - 1, day);
+                const dateObj = new Date(dateStr);
                 const hoyStr = getLocalDateString();
                 const dateLabel = dateStr === hoyStr ? 'Hoy' : dateObj.toLocaleDateString('es-CO', {
                     weekday: 'long',
@@ -1345,5 +1344,4 @@
     </script>
 </body>
 
-
-</html>
+</html> 
