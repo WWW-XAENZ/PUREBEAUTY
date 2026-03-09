@@ -275,11 +275,23 @@ const utils = {
             padding: 16px 24px;
             border-radius: 12px;
             font-weight: 500;
-            animation: slideIn 0.3s ease;
+            animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             max-width: 400px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         `;
-        alert.textContent = message;
+        
+        // Iconos según el tipo
+        const icons = {
+            success: '✨',
+            info: '💡',
+            warning: '⚠️',
+            error: '❌'
+        };
+        
+        alert.innerHTML = `<span style="font-size: 1.5rem;">${icons[type] || icons.success}</span><span>${message}</span>`;
 
         if (type === 'success') {
             alert.style.background = 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)';
@@ -302,9 +314,9 @@ const utils = {
         document.body.appendChild(alert);
 
         setTimeout(() => {
-            alert.style.animation = 'slideOut 0.3s ease';
+            alert.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => alert.remove(), 300);
-        }, 3000);
+        }, 3500);
     }
 };
 
@@ -983,15 +995,21 @@ function renderDeudores() {
     const deudores = getDeudores();
     const searchTerm = document.getElementById('buscarDeudor')?.value?.toLowerCase() || '';
     
+    // Calculate total remaining (original - abonos)
+    let totalPendiente = 0;
+    deudores.forEach(d => {
+        const abonosTotal = (d.abonos || []).reduce((sum, a) => sum + (parseInt(a.monto) || 0), 0);
+        const pendiente = (parseInt(d.monto) || 0) - abonosTotal;
+        if (pendiente > 0) totalPendiente += pendiente;
+    });
+    
     // Filter by search term
     const deudoresFiltrados = deudores.filter(d => 
         d.nombre.toLowerCase().includes(searchTerm) ||
         (d.telefono && d.telefono.includes(searchTerm))
     );
     
-    const total = deudores.reduce((sum, d) => sum + (parseInt(d.monto) || 0), 0);
-    
-    if (totalEl) totalEl.textContent = utils.formatPrice(total);
+    if (totalEl) totalEl.textContent = utils.formatPrice(totalPendiente);
     
     if (deudoresFiltrados.length === 0) {
         list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">' + (searchTerm ? 'No se encontraron deudores con ese nombre' : 'No hay deudores') + '</p>';
@@ -1018,34 +1036,155 @@ function renderDeudores() {
     }
     
     list.innerHTML = Object.entries(deudoresPorCliente).map(([nombre, deudoresCliente]) => {
-        const totalCliente = deudoresCliente.reduce((sum, d) => sum + (parseInt(d.monto) || 0), 0);
+        const totalCliente = deudoresCliente.reduce((sum, d) => {
+            const abonosTotal = (d.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+            return sum + Math.max(0, (parseInt(d.monto) || 0) - abonosTotal);
+        }, 0);
         return `
         <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 2px solid var(--border);">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
                 <strong style="font-size: 1.1rem; color: var(--primary-dark);">${nombre}</strong>
                 <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.8rem;">${utils.formatPrice(totalCliente)}</span>
             </div>
-            ${deudoresCliente.map(d => `
-                <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; border: 1.5px solid var(--border);">
+            ${deudoresCliente.map(d => {
+                const abonosTotal = (d.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+                const pendiente = (parseInt(d.monto) || 0) - abonosTotal;
+                const estaPagado = pendiente <= 0;
+                return `
+                <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; border: 1.5px solid var(--border); ${estaPagado ? 'opacity: 0.6; border-color: #7FB89A;' : ''}">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                             <div style="font-size: 0.95rem; margin-bottom: 4px;">
-                                <strong>Monto:</strong> ${utils.formatPrice(d.monto)}
+                                <strong>Deuda:</strong> ${utils.formatPrice(d.monto)}
+                                ${abonosTotal > 0 ? `<span style="color: #7FB89A; margin-left: 8px;">(-${utils.formatPrice(abonosTotal)} abonado)</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.9rem; margin-bottom: 4px;">
+                                <strong>Saldo pendiente:</strong> <span style="color: ${estaPagado ? '#7FB89A' : '#C95555'}; font-weight: 600;">${utils.formatPrice(pendiente)}</span>
+                                ${estaPagado ? '<span style="background: #7FB89A; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">PAGADO</span>' : ''}
                             </div>
                             <div style="font-size: 0.85rem; color: var(--text-muted);">
                                 <strong>Tel:</strong> ${d.telefono || 'N/A'} | <strong>Fecha:</strong> ${d.fecha ? new Date(d.fecha).toLocaleDateString('es-CO') : 'Sin fecha'}
                             </div>
                             ${d.notas ? `<div style="font-size: 0.85rem; margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); color: var(--text-muted);">${d.notas}</div>` : ''}
+                            ${d.abonos && d.abonos.length > 0 ? `
+                            <div style="font-size: 0.8rem; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); color: #7FB89A;">
+                                <strong>Historial de abonos:</strong>
+                                ${d.abonos.map(a => `<div style="margin-top: 4px;">• ${utils.formatPrice(a.monto)} - ${a.notas || 'Sin nota'} (${new Date(a.fecha).toLocaleDateString('es-CO')})</div>`).join('')}
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px; margin-top: 10px;">
-                        <button onclick="marcarPagado(${d.index})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Marcar Pagado</button>
-                        <button onclick="eliminarDeudor(${d.index})" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer;">Eliminar</button>
+                        ${!estaPagado ? `<button onclick="abrirAbono(${d.index})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Abonar</button>` : ''}
+                        <button onclick="editarDeudor(${d.index})" style="flex: 1; padding: 8px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">${estaPagado ? 'Eliminar' : 'Editar'}</button>
+                        <button onclick="eliminarDeudor(${d.index})" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer; display: ${estaPagado ? 'inline-block' : 'none'};">Eliminar</button>
                     </div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>
     `}).join('');
+}
+
+// Variables para control de abonos
+let abonoEditando = null;
+
+function abrirAbono(index) {
+    const deudores = getDeudores();
+    const deudor = deudores[index];
+    if (!deudor) return;
+    
+    abonoEditando = index;
+    
+    const abonosTotal = (deudor.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+    const pendiente = (parseInt(deudor.monto) || 0) - abonosTotal;
+    
+    document.getElementById('abonoCliente').textContent = deudor.nombre;
+    document.getElementById('abonoPendiente').textContent = utils.formatPrice(pendiente);
+    document.getElementById('abonoMonto').max = pendiente;
+    document.getElementById('abonoMonto').value = '';
+    document.getElementById('abonoNotas').value = '';
+    
+    document.getElementById('abonoForm').style.display = 'block';
+    document.getElementById('deudaTotal').style.display = 'none';
+    document.getElementById('deudoresList').style.display = 'none';
+    
+    // Focus and add enter key listener
+    const montoInput = document.getElementById('abonoMonto');
+    montoInput.focus();
+    
+    // Remove any existing listener
+    montoInput.onkeydown = function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            guardarAbono();
+        }
+    };
+}
+
+function cancelarAbono() {
+    abonoEditando = null;
+    document.getElementById('abonoForm').style.display = 'none';
+    document.getElementById('deudaTotal').style.display = 'block';
+    document.getElementById('deudoresList').style.display = 'block';
+}
+
+function guardarAbono() {
+    const monto = parseInt(document.getElementById('abonoMonto').value) || 0;
+    const notas = document.getElementById('abonoNotas').value.trim();
+    
+    if (monto <= 0) {
+        utils.showAlert('Ingresa un monto valido', 'error');
+        return;
+    }
+    
+    const deudores = getDeudores();
+    const deudor = deudores[abonoEditando];
+    
+    if (!deudor) {
+        cancelarAbono();
+        return;
+    }
+    
+    const abonosTotal = (deudor.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+    const pendiente = (parseInt(deudor.monto) || 0) - abonosTotal;
+    
+    if (monto > pendiente) {
+        utils.showAlert('El monto no puede ser mayor al saldo pendiente', 'error');
+        return;
+    }
+    
+    // Agregar abono
+    if (!deudor.abonos) deudor.abonos = [];
+    deudor.abonos.push({
+        monto: monto,
+        notas: notas,
+        fecha: new Date().toISOString().split('T')[0]
+    });
+    
+    saveDeudores(deudores);
+    renderDeudores();
+    
+    // ===== REGISTRAR ABONO COMO VENTA DEL DÍA =====
+    const ventaAbono = {
+        fecha: new Date().toISOString().split('T')[0],
+        producto: 'Abono',
+        cantidad: 1,
+        precioUnitario: monto,
+        monto: monto,
+        cliente: deudor.nombre,
+        notas: notas ? 'Abono - ' + notas : 'Abono a deuda',
+        tipo: 'abono', // Marcar como abono para diferenciarlo
+        fechaRegistro: new Date().toISOString()
+    };
+    
+    const ventas = getVentas();
+    ventas.push(ventaAbono);
+    saveVentas(ventas);
+    renderVentas();
+    // ===== FIN REGISTRO ABONO COMO VENTA =====
+    
+    cancelarAbono();
+    utils.showAlert('Abono registrado y agregado a ventas del dia! 🎉', 'success');
 }
 
 function eliminarDeudor(index) {
@@ -1057,12 +1196,57 @@ function eliminarDeudor(index) {
 }
 
 function marcarPagado(index) {
-    if (!confirm('¿Marcar como pagado?')) return;
+    if (!confirm('¿Marcar como pagado (limpiar deuda para permitir nueva)?')) return;
     const deudores = getDeudores();
-    deudores.splice(index, 1);
+    const deudor = deudores[index];
+    
+    if (!deudor) return;
+    
+    const abonosTotal = (deudor.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+    const pendiente = (parseInt(deudor.monto) || 0) - abonosTotal;
+    
+    if (pendiente > 0) {
+        if (!confirm(`Este cliente aún tiene un saldo pendiente de ${utils.formatPrice(pendiente)}. ¿Marcar como pagado de todas formas?`)) {
+            return;
+        }
+    }
+    
+    // No eliminar el registro, solo limpiar abonos y monto para permitir nueva deuda
+    deudor.abonos = [];
+    deudor.monto = 0;
+    deudor.fecha = new Date().toISOString().split('T')[0]; // Actualizar fecha
+    
     saveDeudores(deudores);
     renderDeudores();
-    utils.showAlert('Deuda marcada como pagada');
+    utils.showAlert('Deuda limpiada! El cliente puede registrar una nueva deuda. ✅', 'success');
+}
+
+// Variable para edición de deudor
+let deudorEditando = null;
+
+function editarDeudor(index) {
+    const deudores = getDeudores();
+    const deudor = deudores[index];
+    if (!deudor) return;
+    
+    deudorEditando = index;
+    
+    document.getElementById('deudorNombre').value = deudor.nombre;
+    document.getElementById('deudorMonto').value = deudor.monto;
+    document.getElementById('deudorTelefono').value = deudor.telefono || '';
+    document.getElementById('deudorFecha').value = deudor.fecha || '';
+    document.getElementById('deudorNotas').value = deudor.notas || '';
+    
+    // Scroll al formulario
+    document.getElementById('deudorForm').scrollIntoView({ behavior: 'smooth' });
+    
+    // Cambiar texto del botón
+    const submitBtn = document.querySelector('#deudorForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.textContent = 'Actualizar Deuda';
+    }
+    
+    utils.showAlert('Editando ' + deudor.nombre + '. Modifica los datos y guarda.');
 }
 
 function initDeudoresForm() {
@@ -1081,22 +1265,75 @@ function initDeudoresForm() {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const deudor = {
-            nombre: document.getElementById('deudorNombre').value.trim(),
-            monto: parseInt(document.getElementById('deudorMonto').value) || 0,
-            telefono: document.getElementById('deudorTelefono').value.trim(),
-            fecha: document.getElementById('deudorFecha').value,
-            notas: document.getElementById('deudorNotas').value.trim()
-        };
+        const nombre = document.getElementById('deudorNombre').value.trim();
+        const monto = parseInt(document.getElementById('deudorMonto').value) || 0;
+        const telefono = document.getElementById('deudorTelefono').value.trim();
+        const fecha = document.getElementById('deudorFecha').value;
+        const notas = document.getElementById('deudorNotas').value.trim();
+        
+        if (!nombre || monto <= 0) {
+            utils.showAlert('Ingresa un nombre y monto validos');
+            return;
+        }
         
         const deudores = getDeudores();
-        deudores.push(deudor);
-        saveDeudores(deudores);
         
-        renderDeudores();
-        form.reset();
-        if (fechaInput) fechaInput.valueAsDate = new Date();
-        utils.showAlert('Deuda registrada');
+        // Si está editando, actualizar el deudor
+        if (deudorEditando !== null) {
+            const deudor = deudores[deudorEditando];
+            if (deudor) {
+                deudor.nombre = nombre;
+                deudor.monto = monto;
+                deudor.telefono = telefono;
+                deudor.fecha = fecha;
+                deudor.notas = notas;
+                saveDeudores(deudores);
+                renderDeudores();
+                form.reset();
+                if (fechaInput) fechaInput.valueAsDate = new Date();
+                
+                // Restaurar botón
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = 'Registrar Deuda';
+                
+                deudorEditando = null;
+                utils.showAlert('Deudor actualizado correctamente');
+                return;
+            }
+        }
+        
+        // Buscar si ya existe un deudor con el mismo nombre (solo para nuevos registros)
+        const deudorExistente = deudores.find(d => d.nombre.toLowerCase() === nombre.toLowerCase());
+        
+        if (deudorExistente) {
+            // Sumar la deuda al existente
+            deudorExistente.monto = (parseInt(deudorExistente.monto) || 0) + monto;
+            deudorExistente.fecha = fecha;
+            if (notas) {
+                deudorExistente.notas = deudorExistente.notas ? deudorExistente.notas + ' | ' + notas : notas;
+            }
+            saveDeudores(deudores);
+            renderDeudores();
+            form.reset();
+            if (fechaInput) fechaInput.valueAsDate = new Date();
+            utils.showAlert('Deuda sumada a ' + nombre + '. Total pendiente: ' + utils.formatPrice(deudorExistente.monto));
+        } else {
+            // Crear nuevo deudor
+            const deudor = {
+                nombre: nombre,
+                monto: monto,
+                telefono: telefono,
+                fecha: fecha,
+                notas: notas
+            };
+            
+            deudores.push(deudor);
+            saveDeudores(deudores);
+            renderDeudores();
+            form.reset();
+            if (fechaInput) fechaInput.valueAsDate = new Date();
+            utils.showAlert('Deudor registrado correctamente');
+        }
     });
 }
 
@@ -1118,34 +1355,55 @@ function renderMisDeudas() {
     if (!list) return;
     
     const deudas = getMisDeudas();
-    const total = deudas.reduce((sum, d) => sum + (parseInt(d.monto) || 0), 0);
     
-    if (totalEl) totalEl.textContent = utils.formatPrice(total);
+    // Calcular total pendiente (original - abonos)
+    let totalPendiente = 0;
+    deudas.forEach(d => {
+        const abonosTotal = (d.abonos || []).reduce((sum, a) => sum + (parseInt(a.monto) || 0), 0);
+        const pendiente = (parseInt(d.monto) || 0) - abonosTotal;
+        if (pendiente > 0) totalPendiente += pendiente;
+    });
+    
+    if (totalEl) totalEl.textContent = utils.formatPrice(totalPendiente);
     
     if (deudas.length === 0) {
         list.innerHTML = '<p style="text-align: center; padding: 20px;">No tienes deudas registradas</p>';
         return;
     }
     
-    list.innerHTML = deudas.map((d, i) => `
-        <div style="background: linear-gradient(135deg, #FFF5F5 0%, #FFEEEE 100%); padding: 18px; border-radius: var(--radius-md); margin-bottom: 12px; border: 2px solid #FFE5E5;">
+    list.innerHTML = deudas.map((d, i) => {
+        const abonosTotal = (d.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+        const pendiente = (parseInt(d.monto) || 0) - abonosTotal;
+        const estaPagado = pendiente <= 0;
+        const puedeAbonar = !estaPagado;
+        
+        return `
+        <div style="background: linear-gradient(135deg, ${estaPagado ? '#E8F5E9 0%, #C8E6C9 100%' : '#FFF5F5 0%, #FFEEEE 100%'}); padding: 18px; border-radius: var(--radius-md); margin-bottom: 12px; border: 2px solid ${estaPagado ? '#81C784' : '#FFE5E5'};">
             <div style="display: flex; justify-content: space-between;">
                 <strong>${d.acreedor}</strong>
-                <strong style="color: #C95555;">${utils.formatPrice(d.monto)}</strong>
+                <strong style="color: ${estaPagado ? '#2E7D32' : '#C95555'};">${utils.formatPrice(d.monto)}</strong>
             </div>
             <div style="font-size: 0.9rem; color: var(--text-muted);">
                 <strong>Tel:</strong> ${d.telefono || 'N/A'}<br>
                 <strong>Fecha:</strong> ${d.fecha ? new Date(d.fecha).toLocaleDateString('es-CO') : 'Sin fecha'}
                 ${d.vencimiento ? `<br><strong>Vence:</strong> ${new Date(d.vencimiento).toLocaleDateString('es-CO')}` : ''}
+                ${abonosTotal > 0 ? `<br><span style="color: #7FB89A;">(-${utils.formatPrice(abonosTotal)} pagado)</span>` : ''}
+                ${!estaPagado ? `<br><strong style="color: #C62828;">Pendiente:</strong> ${utils.formatPrice(pendiente)}` : '<br><strong style="color: #2E7D32;">PAGADA</strong>'}
             </div>
             ${d.notas ? `<div style="font-size: 0.85rem; margin-top: 8px; padding-top: 8px; border-top: 1px solid #FFE5E5; color: var(--text-muted);">${d.notas}</div>` : ''}
+            ${d.abonos && d.abonos.length > 0 ? `
+            <div style="font-size: 0.8rem; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); color: #7FB89A;">
+                <strong>Historial de abonos:</strong>
+                ${d.abonos.map(a => `<div style="margin-top: 4px;">• ${utils.formatPrice(a.monto)} - ${a.notas || 'Sin nota'} (${new Date(a.fecha).toLocaleDateString('es-CO')})</div>`).join('')}
+            </div>
+            ` : ''}
             <div style="margin-top: 12px; display: flex; gap: 8px;">
+                ${puedeAbonar ? `<button onclick="abrirAbonoMiDeuda(${i})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #E57373 0%, #C62828 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Abonar</button>` : ''}
                 <button onclick="editarDeuda(${i})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #C9A8D8 0%, #9A7AA8 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Editar</button>
-                <button onclick="pagarMiDeuda(${i})" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Marcar Pagada</button>
                 <button onclick="eliminarMiDeuda(${i})" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer;">Eliminar</button>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function eliminarMiDeuda(index) {
@@ -1159,10 +1417,98 @@ function eliminarMiDeuda(index) {
 function pagarMiDeuda(index) {
     if (!confirm('¿Marcar como pagada?')) return;
     const deudas = getMisDeudas();
-    deudas.splice(index, 1);
+    const deuda = deudas[index];
+    
+    if (!deuda) return;
+    
+    // No eliminar el registro, solo limpiar monto para permitir nueva deuda
+    deuda.monto = 0;
+    deuda.fecha = new Date().toISOString().split('T')[0];
+    
     saveMisDeudas(deudas);
     renderMisDeudas();
-    utils.showAlert('Deuda pagada');
+    utils.showAlert('Deuda limpiada! Ya puedes registrar una nueva deuda. ✅', 'success');
+}
+
+// ============================================
+// ABONOS A MIS DEUDAS (SIN SUMAR A VENTAS)
+// ============================================
+
+function abrirAbonoMiDeuda(index) {
+    const deudas = getMisDeudas();
+    const deuda = deudas[index];
+    if (!deuda) return;
+    
+    abonoMiDeudaEditando = index;
+    
+    const abonosTotal = (deuda.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+    const pendiente = (parseInt(deuda.monto) || 0) - abonosTotal;
+    
+    if (pendiente <= 0) {
+        utils.showAlert('Esta deuda ya esta pagada! ', 'info');
+        return;
+    }
+    
+    document.getElementById('abonoAcreedor').textContent = deuda.acreedor;
+    document.getElementById('abonoMiDeudaPendiente').textContent = utils.formatPrice(pendiente);
+    document.getElementById('abonoMiDeudaMonto').max = pendiente;
+    document.getElementById('abonoMiDeudaMonto').value = '';
+    document.getElementById('abonoMiDeudaNotas').value = '';
+    
+    document.getElementById('abonoMiDeudaForm').style.display = 'block';
+    document.getElementById('miDeudaTotal').style.display = 'none';
+    document.getElementById('misDeudasList').style.display = 'none';
+    
+    // Focus and add enter key listener
+    const montoInput = document.getElementById('abonoMiDeudaMonto');
+    montoInput.focus();
+}
+
+function cancelarAbonoMiDeuda() {
+    abonoMiDeudaEditando = null;
+    document.getElementById('abonoMiDeudaForm').style.display = 'none';
+    document.getElementById('miDeudaTotal').style.display = 'block';
+    document.getElementById('misDeudasList').style.display = 'block';
+}
+
+function guardarAbonoMiDeuda() {
+    const monto = parseInt(document.getElementById('abonoMiDeudaMonto').value) || 0;
+    const notas = document.getElementById('abonoMiDeudaNotas').value.trim();
+    
+    if (monto <= 0) {
+        utils.showAlert('Por favor ingresa un monto valido', 'warning');
+        return;
+    }
+    
+    const deudas = getMisDeudas();
+    const deuda = deudas[abonoMiDeudaEditando];
+    
+    if (!deuda) {
+        cancelarAbonoMiDeuda();
+        return;
+    }
+    
+    const abonosTotal = (deuda.abonos || []).reduce((s, a) => s + (parseInt(a.monto) || 0), 0);
+    const pendiente = (parseInt(deuda.monto) || 0) - abonosTotal;
+    
+    if (monto > pendiente) {
+        utils.showAlert('El monto no puede ser mayor al saldo pendiente');
+        return;
+    }
+    
+    // Agregar abono
+    if (!deuda.abonos) deuda.abonos = [];
+    deuda.abonos.push({
+        monto: monto,
+        notas: notas,
+        fecha: new Date().toISOString().split('T')[0]
+    });
+    
+    saveMisDeudas(deudas);
+    renderMisDeudas();
+    cancelarAbonoMiDeuda();
+    utils.showAlert('Abono registrado correctamente! ✅', 'success');
+    // NOTA: Este abono NO se suma a ventas (como solicito el usuario)
 }
 
 function initMisDeudasForm() {
@@ -1175,37 +1521,83 @@ function initMisDeudasForm() {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const deuda = {
-            acreedor: document.getElementById('acreedorNombre').value.trim(),
-            monto: parseInt(document.getElementById('miDeudaMonto').value) || 0,
-            telefono: document.getElementById('miDeudaTelefono').value.trim(),
-            fecha: document.getElementById('miDeudaFecha').value,
-            vencimiento: document.getElementById('miDeudaVencimiento').value,
-            notas: document.getElementById('miDeudaNotas').value.trim()
-        };
+        const acreedor = document.getElementById('acreedorNombre').value.trim();
+        const monto = parseInt(document.getElementById('miDeudaMonto').value) || 0;
+        const telefono = document.getElementById('miDeudaTelefono').value.trim();
+        const fecha = document.getElementById('miDeudaFecha').value;
+        const vencimiento = document.getElementById('miDeudaVencimiento').value;
+        const notas = document.getElementById('miDeudaNotas').value.trim();
+        
+        if (!acreedor || monto <= 0) {
+            utils.showAlert('Por favor ingresa un acreedor y monto validos', 'warning');
+            return;
+        }
         
         const deudas = getMisDeudas();
         
         if (deudaEditando !== null) {
             // Update existing deuda
-            deudas[deudaEditando] = deuda;
+            deudas[deudaEditando] = {
+                acreedor: acreedor,
+                monto: monto,
+                telefono: telefono,
+                fecha: fecha,
+                vencimiento: vencimiento,
+                notas: notas
+            };
             saveMisDeudas(deudas);
             renderMisDeudas();
             cancelarEdicionDeuda();
             utils.showAlert('Deuda actualizada correctamente');
         } else {
-            // Create new deuda
-            deudas.push(deuda);
-            saveMisDeudas(deudas);
-            renderMisDeudas();
-            form.reset();
-            if (fechaInput) fechaInput.valueAsDate = new Date();
-            utils.showAlert('Deuda registrada');
+            // Buscar si ya existe un acreedor con el mismo nombre
+            const deudaExistente = deudas.find(d => d.acreedor.toLowerCase() === acreedor.toLowerCase());
+            
+            if (deudaExistente && deudaExistente.monto > 0) {
+                // Sumar la deuda al existente
+                deudaExistente.monto = (parseInt(deudaExistente.monto) || 0) + monto;
+                deudaExistente.fecha = fecha;
+                if (vencimiento) deudaExistente.vencimiento = vencimiento;
+                if (notas) {
+                    deudaExistente.notas = deudaExistente.notas ? deudaExistente.notas + ' | ' + notas : notas;
+                }
+                saveMisDeudas(deudas);
+                renderMisDeudas();
+                form.reset();
+                if (fechaInput) fechaInput.valueAsDate = new Date();
+                utils.showAlert('Deuda sumada a ' + acreedor + '. Total: ' + utils.formatPrice(deudaExistente.monto));
+            } else {
+                // Crear nueva deuda (o actualizar si monto era 0)
+                const nuevaDeuda = {
+                    acreedor: acreedor,
+                    monto: monto,
+                    telefono: telefono,
+                    fecha: fecha,
+                    vencimiento: vencimiento,
+                    notas: notas
+                };
+                
+                // Si找到 pero monto era 0, reemplazar
+                if (deudaExistente) {
+                    deudas[deudas.indexOf(deudaExistente)] = nuevaDeuda;
+                } else {
+                    deudas.push(nuevaDeuda);
+                }
+                
+                saveMisDeudas(deudas);
+                renderMisDeudas();
+                form.reset();
+                if (fechaInput) fechaInput.valueAsDate = new Date();
+                utils.showAlert('Deuda registrada');
+            }
         }
     });
 }
 
 let deudaEditando = null;
+
+// Variable para control de abonos a Mis Deudas
+let abonoMiDeudaEditando = null;
 
 function editarDeuda(index) {
     const deudas = getMisDeudas();
@@ -1341,11 +1733,11 @@ function renderVentas() {
                 return `
                     <div style="background: white; padding: 14px 16px; border-radius: var(--radius-md); margin-bottom: 8px; border: 1.5px solid var(--border); margin-left: 10px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <strong>${v.producto}</strong>
+                            <strong>${v.tipo === 'abono' ? '🔄 ' + v.producto : v.producto}</strong>
                             <strong style="color: var(--primary-dark);">${utils.formatPrice(v.monto)}</strong>
                         </div>
                         <div style="font-size: 0.85rem; color: var(--text-muted);">
-                            <strong>Cantidad:</strong> ${v.cantidad} | <strong>Precio unitario:</strong> ${utils.formatPrice(v.precioUnitario)}
+                            ${v.tipo === 'abono' ? '<strong>Tipo:</strong> Abono a deuda' : '<strong>Cantidad:</strong> ' + v.cantidad + ' | <strong>Precio unitario:</strong> ' + utils.formatPrice(v.precioUnitario)}
                         </div>
                         ${v.cliente ? `<div style="font-size: 0.85rem; color: var(--text-muted);"><strong>Cliente:</strong> ${v.cliente}</div>` : ''}
                         <div style="margin-top: 8px; text-align: right;">

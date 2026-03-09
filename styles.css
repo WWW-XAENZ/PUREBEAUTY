@@ -1771,3 +1771,184 @@ footer {
 .mb-3 {
     margin-bottom: 30px;
 }
+
+/* ============================================
+   ANIMACIONES MEJORADAS
+   ============================================ */
+
+/* Animación de entrada */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Animación de salida */
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}
+
+/* Animación de rebote */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+/* Animación de pulso */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Animación de shimmer para cargar */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Animación de shake para errores */
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Animación slide in from right */
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Animación slide out to right */
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+/* Animación de aparecen items de lista */
+@keyframes listItemFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Aplicar animaciones a elementos */
+.card {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* Animación para elementos de lista */
+#deudoresList > div,
+#misDeudasList > div,
+#ventasList > div,
+#encargosList > div {
+    animation: listItemFadeIn 0.3s ease-out forwards;
+}
+
+/* Animación para alertas flotantes */
+.floating-alert {
+    animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Efecto hover mejorado para inputs */
+.form-group input,
+.form-group textarea,
+.form-group select {
+    transition: all 0.3s ease;
+}
+
+/* Animación de carga para productos */
+.card.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Animación para modal */
+.modal-content {
+    animation: fadeInUp 0.4s ease-out;
+}
+
+/* Efecto glassmorphism mejorado */
+.glass {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Animación de éxito */
+.success-checkmark {
+    animation: bounce 0.6s ease-out;
+}
+
+/* Transiciones suaves para cambios de color */
+.admin-panel,
+.card,
+.btn,
+.form-group input,
+.form-group textarea {
+    transition: all 0.3s ease;
+}

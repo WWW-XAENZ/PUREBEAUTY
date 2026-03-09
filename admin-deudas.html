@@ -110,6 +110,26 @@
                             <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;">Total por Pagar</div>
                             <div id="totalMiDeuda" style="font-size: 2rem; font-weight: 700; color: var(--primary-dark); margin-top: 6px; font-family: var(--font-heading);">$0</div>
                         </div>
+                        <!-- Formulario de Abono a Mi Deuda (modal inline) -->
+                        <div id="abonoMiDeudaForm" style="background: linear-gradient(135deg, #FFF5F5 0%, #FFEEEE 100%); padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; border: 2px solid #E57373; display: none;">
+                            <div class="admin-section-title" style="color: #C62828;">Registrar Abono a Mi Deuda</div>
+                            <div style="margin-bottom: 12px; font-size: 0.95rem;">
+                                <strong id="abonoAcreedor"></strong><br>
+                                <span style="color: var(--text-muted);">Pendiente: <strong id="abonoMiDeudaPendiente" style="color: #C95555;"></strong></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="abonoMiDeudaMonto">Monto del Abono (COP)</label>
+                                <input type="number" id="abonoMiDeudaMonto" placeholder="Cuanto voy a pagar?" min="0" step="1000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="abonoMiDeudaNotas">Notas del Abono</label>
+                                <input type="text" id="abonoMiDeudaNotas" placeholder="Ej: Pago parcial en efectivo">
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" onclick="guardarAbonoMiDeuda()" class="btn btn-primary" style="flex: 1; background: linear-gradient(135deg, #E57373 0%, #C62828 100%);">Guardar Abono</button>
+                                <button type="button" onclick="cancelarAbonoMiDeuda()" class="btn btn-ghost" style="flex: 1;">Cancelar</button>
+                            </div>
+                        </div>
                         <div class="admin-section-title">Lista de Mis Deudas</div>
                         <div id="misDeudasList" style="max-height: 400px; overflow-y: auto;">
                             <!-- Mis deudas rendered here -->
