@@ -8,9 +8,9 @@
     <meta name="description" content="Registro de ventas - Pure Beauty by Yuliana Silva">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="stylesheet" href="styles.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com ">
+    <link rel="preconnect" href="https://fonts.gstatic.com " crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400 ;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         .week-grid {
             display: grid;
@@ -1036,7 +1036,9 @@
             window.verPeriodo = function(periodo) {
                 periodoActual = periodo;
                 
+                // Remover clase active de todos los stat-box
                 document.querySelectorAll('.stat-box').forEach(box => box.classList.remove('active'));
+                // Agregar clase active al que fue clickeado
                 event.currentTarget.classList.add('active');
                 
                 renderDaySales();
@@ -1075,24 +1077,44 @@
                 });
             }
 
+            // ============================================
+            // FUNCIÓN CORREGIDA: selectDate
+            // ============================================
             function selectDate(dateStr) {
                 selectedDate = dateStr;
                 document.getElementById('ventaFecha').value = dateStr;
 
-                const dateObj = new Date(dateStr);
+                // Usar fecha con hora fija para evitar problemas de zona horaria
+                const dateObj = new Date(dateStr + 'T12:00:00');
                 const hoyStr = getLocalDateString();
-                const dateLabel = dateStr === hoyStr ? 'Hoy' : dateObj.toLocaleDateString('es-CO', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long'
-                });
+                
+                // Formatear la fecha para mostrar
+                let dateLabel;
+                if (dateStr === hoyStr) {
+                    dateLabel = 'Hoy';
+                } else {
+                    dateLabel = dateObj.toLocaleDateString('es-CO', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long'
+                    });
+                }
 
                 document.getElementById('selectedDateLabel').textContent = dateLabel;
                 
+                // CORRECCIÓN PRINCIPAL: Resetear el periodo actual a 'dia'
                 periodoActual = 'dia';
-                renderDaySales();
+                
+                // Remover clase active de todos los stat-box
+                document.querySelectorAll('.stat-box').forEach(box => box.classList.remove('active'));
+                
+                renderWeekGrid(); // Actualizar la selección visual en la grilla
+                renderDaySales(); // Ahora sí mostrará las ventas del día correcto
             }
 
+            // ============================================
+            // FUNCIÓN CORREGIDA: renderDaySales
+            // ============================================
             function renderDaySales() {
                 const list = document.getElementById('daySalesList');
                 if (!list) return;
@@ -1133,19 +1155,27 @@
                         
                     case 'dia':
                     default: {
+                        // CORRECCIÓN: Usar selectedDate en lugar de calcular otra fecha
                         ventas = getSalesForDate(selectedDate);
-                        const dateObj = new Date(selectedDate);
+                        const dateObj = new Date(selectedDate + 'T12:00:00'); // Evitar problemas de zona horaria
                         const hoyStr = getLocalDateString();
-                        titulo = selectedDate === hoyStr ? 'Hoy' : dateObj.toLocaleDateString('es-CO', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long'
-                        });
+                        
+                        if (selectedDate === hoyStr) {
+                            titulo = 'Hoy';
+                        } else {
+                            titulo = dateObj.toLocaleDateString('es-CO', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long'
+                            });
+                        }
                         break;
                     }
                 }
 
-                document.getElementById('listDateLabel').textContent = titulo;
+                // Capitalizar primera letra del título
+                const tituloFormateado = titulo.charAt(0).toUpperCase() + titulo.slice(1);
+                document.getElementById('listDateLabel').textContent = tituloFormateado;
 
                 if (ventas.length === 0) {
                     list.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px 20px;">No hay ventas registradas para ${titulo.toLowerCase()}</p>`;
@@ -1166,7 +1196,7 @@
                     const fechasOrdenadas = Object.keys(ventasPorFecha).sort().reverse();
                     
                     fechasOrdenadas.forEach(fecha => {
-                        const fechaObj = new Date(fecha);
+                        const fechaObj = new Date(fecha + 'T12:00:00');
                         const fechaStr = fechaObj.toLocaleDateString('es-CO', {
                             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
                         });
@@ -1344,4 +1374,4 @@
     </script>
 </body>
 
-</html> 
+</html>
