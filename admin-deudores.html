@@ -11,6 +11,183 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos adicionales para mejorar espacio */
+        .deudas-compacto {
+            font-size: 0.9rem;
+        }
+        
+        .cliente-card {
+            background: var(--secondary);
+            padding: 12px;
+            border-radius: var(--radius-md);
+            margin-bottom: 12px;
+            border: 2px solid var(--border);
+        }
+        
+        .cliente-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .cliente-nombre {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .cliente-badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+        }
+        
+        .deuda-item {
+            background: white;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            border: 1.5px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .deuda-item.pagada {
+            opacity: 0.7;
+            border-color: #7FB89A;
+            background: #f8fff8;
+        }
+        
+        .deuda-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .deuda-fecha {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .deuda-telefono {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .deuda-montos {
+            text-align: right;
+        }
+        
+        .monto-total {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        
+        .monto-pagado {
+            font-size: 0.75rem;
+            color: #7FB89A;
+        }
+        
+        .monto-pendiente {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .estado-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            margin-left: 4px;
+            text-transform: uppercase;
+        }
+        
+        .estado-pagada {
+            background: #7FB89A;
+            color: white;
+        }
+        
+        .estado-parcial {
+            background: #FFE082;
+            color: #F57F17;
+        }
+        
+        .estado-pendiente {
+            background: #FFCDD2;
+            color: #C95555;
+        }
+        
+        .deuda-acciones {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid var(--border);
+        }
+        
+        .deuda-acciones button {
+            flex: 1;
+            padding: 6px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+        
+        .btn-abonar {
+            background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%);
+            color: white;
+        }
+        
+        .btn-editar {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-eliminar {
+            background: #FFE5E5;
+            color: #C95555;
+        }
+        
+        .abonos-historial {
+            grid-column: 1 / -1;
+            font-size: 0.75rem;
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px dashed var(--border);
+        }
+        
+        .abono-linea {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        
+        .notas-deuda {
+            grid-column: 1 / -1;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: 4px;
+        }
+        
+        .total-cliente {
+            font-size: 0.85rem;
+            color: #C95555;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+    </style>
 </head>
 
 <body>
@@ -83,7 +260,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="deudorMonto">Monto Adeudado (COP)</label>
-                                    <input type="number" id="deudorMonto" placeholder="" min="0" step="1000" required>
+                                    <input type="number" id="deudorMonto" placeholder="" min="50" step="50" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="deudorTelefono">Telefono</label>
@@ -93,10 +270,6 @@
                             <div class="form-group">
                                 <label for="deudorFecha">Fecha de la Deuda</label>
                                 <input type="date" id="deudorFecha">
-                            </div>
-                            <div class="form-group">
-                                <label for="deudorConcepto">Concepto / Producto</label>
-                                <input type="text" id="deudorConcepto" placeholder="Ej: Crema hidratante, Serum...">
                             </div>
                             <div class="form-group">
                                 <label for="deudorNotas">Acuerdo de Pago / Notas</label>
@@ -115,13 +288,12 @@
                             <div class="admin-section-title" style="color: #2E7D32;">Registrar Abono</div>
                             <div style="margin-bottom: 12px; font-size: 0.95rem;">
                                 <strong id="abonoCliente"></strong><br>
-                                <span style="color: var(--text-muted);">Deuda: <strong id="abonoConcepto" style="color: var(--primary-dark);"></strong></span><br>
                                 <span style="color: var(--text-muted);">Pendiente: <strong id="abonoPendiente" style="color: #C95555;"></strong></span>
                             </div>
                             <input type="hidden" id="abonoDeudaId">
                             <div class="form-group">
                                 <label for="abonoMonto">Monto del Abono (COP)</label>
-                                <input type="number" id="abonoMonto" placeholder="Cuanto paga ahora?" min="0" step="1000" required>
+                                <input type="number" id="abonoMonto" placeholder="Cuanto paga ahora?" min="50" step="50" required>
                             </div>
                             <div class="form-group">
                                 <label for="abonoNotas">Notas del Abono</label>
@@ -136,7 +308,7 @@
                         <div style="margin-bottom: 15px;">
                             <input type="text" id="buscarDeudor" placeholder="Buscar deudor por nombre..." style="width: 100%; padding: 10px 15px; border: 2px solid var(--border); border-radius: var(--radius-md); font-size: 0.95rem; background: var(--bg-soft);">
                         </div>
-                        <div id="deudoresList" style="max-height: 400px; overflow-y: auto;">
+                        <div id="deudoresList" class="deudas-compacto" style="max-height: 500px; overflow-y: auto;">
                             <!-- Deudores rendered here -->
                         </div>
                     </div>
@@ -255,11 +427,11 @@
             const monto = parseInt(document.getElementById('deudorMonto').value) || 0;
             const nombre = document.getElementById('deudorNombre').value.trim();
             
-            if (!nombre || monto <= 0) {
+            if (!nombre || monto < 50) {
                 if (typeof utils !== 'undefined' && utils.showAlert) {
-                    utils.showAlert('Ingresa un nombre y monto válidos', 'warning');
+                    utils.showAlert('Ingresa un nombre y monto válido (mínimo $50)', 'warning');
                 } else {
-                    alert('Ingresa un nombre y monto válidos');
+                    alert('Ingresa un nombre y monto válido (mínimo $50)');
                 }
                 return;
             }
@@ -270,7 +442,7 @@
                 monto: monto,
                 telefono: document.getElementById('deudorTelefono').value.trim(),
                 fecha: document.getElementById('deudorFecha').value || new Date().toISOString().split('T')[0],
-                concepto: document.getElementById('deudorConcepto').value.trim() || 'Sin concepto',
+                concepto: 'Deuda', // Valor por defecto ya que se eliminó el campo
                 notas: document.getElementById('deudorNotas').value.trim(),
                 abonos: [],
                 estado: 'pendiente',
@@ -293,7 +465,7 @@
             }
         });
 
-        // Renderizar lista de deudas (cada una independiente)
+        // Renderizar lista de deudas (cada una independiente) - VERSIÓN COMPACTA
         function renderizarDeudasIndependientes() {
             const contenedor = document.getElementById('deudoresList');
             const busqueda = document.getElementById('buscarDeudor').value.toLowerCase().trim();
@@ -303,9 +475,9 @@
             let deudasFiltradas = deudasIndependientes.filter(deuda => {
                 if (busqueda) {
                     const nombre = (deuda.nombre || '').toLowerCase();
-                    const concepto = (deuda.concepto || '').toLowerCase();
                     const telefono = (deuda.telefono || '').toLowerCase();
-                    return nombre.includes(busqueda) || concepto.includes(busqueda) || telefono.includes(busqueda);
+                    const notas = (deuda.notas || '').toLowerCase();
+                    return nombre.includes(busqueda) || telefono.includes(busqueda) || notas.includes(busqueda);
                 }
                 return true;
             });
@@ -323,7 +495,7 @@
                 return;
             }
             
-            // Agrupar visualmente por cliente pero mantener deudas independientes
+            // Agrupar por cliente
             const deudasPorCliente = {};
             deudasFiltradas.forEach(d => {
                 const key = (d.nombre || 'Sin nombre').toLowerCase();
@@ -341,14 +513,12 @@
                 const deudasPendientes = grupo.deudas.filter(d => d.estado !== 'pagada').length;
                 
                 return `
-                    <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 2px solid var(--border);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
-                            <strong style="font-size: 1.1rem; color: var(--primary-dark);">${escapeHtml(grupo.nombre)}</strong>
-                            <div style="text-align: right;">
-                                <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.8rem; display: block; margin-bottom: 4px;">
-                                    ${grupo.deudas.length} deuda${grupo.deudas.length > 1 ? 's' : ''}
-                                </span>
-                                ${totalCliente > 0 ? `<span style="font-size: 0.85rem; color: #C95555; font-weight: 600;">Pendiente: ${formatoPesos(totalCliente)}</span>` : ''}
+                    <div class="cliente-card">
+                        <div class="cliente-header">
+                            <div>
+                                <span class="cliente-nombre">${escapeHtml(grupo.nombre)}</span>
+                                <span class="cliente-badge">${grupo.deudas.length}</span>
+                                ${totalCliente > 0 ? `<div class="total-cliente">Pendiente: ${formatoPesos(totalCliente)}</div>` : ''}
                             </div>
                         </div>
                         ${grupo.deudas.map(d => {
@@ -357,56 +527,41 @@
                             const estaPagado = d.estado === 'pagada';
                             
                             return `
-                            <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; border: 1.5px solid var(--border); ${estaPagado ? 'opacity: 0.7; border-color: #7FB89A;' : ''}">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600; color: var(--primary-dark); margin-bottom: 2px;">
-                                            ${escapeHtml(d.concepto || 'Sin concepto')}
-                                        </div>
-                                        <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                            ${formatearFecha(d.fecha)}
-                                            ${d.telefono ? `| ${escapeHtml(d.telefono)}` : ''}
-                                        </div>
+                            <div class="deuda-item ${estaPagado ? 'pagada' : ''}">
+                                <div class="deuda-info">
+                                    <span class="deuda-fecha">${formatearFecha(d.fecha)}</span>
+                                    ${d.telefono ? `<span class="deuda-telefono">📞 ${escapeHtml(d.telefono)}</span>` : ''}
+                                    ${d.notas ? `<span class="notas-deuda">${escapeHtml(d.notas)}</span>` : ''}
+                                </div>
+                                <div class="deuda-montos">
+                                    <div class="monto-total" style="color: ${estaPagado ? '#2E7D32' : 'var(--text-main)'}">
+                                        ${formatoPesos(d.monto || 0)}
+                                        <span class="estado-badge estado-${d.estado}">${d.estado}</span>
                                     </div>
-                                    <div style="text-align: right;">
-                                        <div style="font-weight: 700; color: ${estaPagado ? '#2E7D32' : '#C95555'}; font-size: 1.1rem;">
-                                            ${formatoPesos(d.monto || 0)}
-                                        </div>
-                                        ${totalAbonos > 0 ? `<div style="font-size: 0.8rem; color: #7FB89A;">-${formatoPesos(totalAbonos)}</div>` : ''}
+                                    ${totalAbonos > 0 ? `<div class="monto-pagado">-${formatoPesos(totalAbonos)}</div>` : ''}
+                                    <div class="monto-pendiente" style="color: ${estaPagado ? '#2E7D32' : '#C95555'}">
+                                        ${estaPagado ? '✓ Pagado' : 'Saldo: ' + formatoPesos(pendiente)}
                                     </div>
                                 </div>
-                                
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
-                                    <span style="font-size: 0.9rem;">
-                                        <strong>Saldo:</strong> 
-                                        <span style="color: ${estaPagado ? '#2E7D32' : '#C95555'}; font-weight: 600;">
-                                            ${formatoPesos(pendiente)}
-                                        </span>
-                                        ${estaPagado ? '<span style="background: #7FB89A; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">PAGADO</span>' : ''}
-                                        ${(!estaPagado && d.estado === 'parcial') ? '<span style="background: #FFE082; color: #F57F17; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">PARCIAL</span>' : ''}
-                                    </span>
-                                </div>
-                                
-                                ${d.notas ? `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border);"><em>${escapeHtml(d.notas)}</em></div>` : ''}
                                 
                                 ${d.abonos && d.abonos.length > 0 ? `
-                                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.8rem;">
-                                        <strong style="color: #7FB89A;">Historial de abonos:</strong>
+                                    <div class="abonos-historial">
+                                        <strong style="color: #7FB89A;">Abonos:</strong>
                                         ${d.abonos.map(a => `
-                                            <div style="display: flex; justify-content: space-between; margin-top: 3px; color: var(--text-muted);">
-                                                <span>${formatearFecha(a.fecha)} - ${escapeHtml(a.notas || 'Abono')}</span>
-                                                <span style="color: #2E7D32; font-weight: 500;">${formatoPesos(a.monto || 0)}</span>
+                                            <div class="abono-linea">
+                                                <span>${formatearFecha(a.fecha)} ${a.notas ? '- ' + escapeHtml(a.notas) : ''}</span>
+                                                <span style="color: #2E7D32;">${formatoPesos(a.monto || 0)}</span>
                                             </div>
                                         `).join('')}
                                     </div>
                                 ` : ''}
                                 
-                                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                <div class="deuda-acciones">
                                     ${!estaPagado ? `
-                                        <button onclick="abrirAbonoIndependiente('${d.id}')" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Abonar</button>
+                                        <button onclick="abrirAbonoIndependiente('${d.id}')" class="btn-abonar">💵 Abonar</button>
                                     ` : ''}
-                                    <button onclick="editarDeudaIndependiente('${d.id}')" style="padding: 8px 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Editar</button>
-                                    <button onclick="eliminarDeudaIndependiente('${d.id}')" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Eliminar</button>
+                                    <button onclick="editarDeudaIndependiente('${d.id}')" class="btn-editar">✏️ Editar</button>
+                                    <button onclick="eliminarDeudaIndependiente('${d.id}')" class="btn-eliminar">🗑️ Eliminar</button>
                                 </div>
                             </div>
                             `;
@@ -426,7 +581,6 @@
             
             document.getElementById('abonoDeudaId').value = deudaId;
             document.getElementById('abonoCliente').textContent = deuda.nombre;
-            document.getElementById('abonoConcepto').textContent = deuda.concepto || 'Sin concepto';
             document.getElementById('abonoPendiente').textContent = formatoPesos(pendiente);
             
             const montoInput = document.getElementById('abonoMonto');
@@ -448,11 +602,11 @@
             const notas = document.getElementById('abonoNotas').value.trim();
             const deudaId = document.getElementById('abonoDeudaId').value;
             
-            if (monto <= 0) {
+            if (monto < 50) {
                 if (typeof utils !== 'undefined' && utils.showAlert) {
-                    utils.showAlert('Ingresa un monto válido', 'error');
+                    utils.showAlert('Ingresa un monto válido (mínimo $50)', 'error');
                 } else {
-                    alert('Ingresa un monto válido');
+                    alert('Ingresa un monto válido (mínimo $50)');
                 }
                 return;
             }
@@ -544,7 +698,6 @@
             document.getElementById('deudorMonto').value = deuda.monto;
             document.getElementById('deudorTelefono').value = deuda.telefono || '';
             document.getElementById('deudorFecha').value = deuda.fecha || '';
-            document.getElementById('deudorConcepto').value = deuda.concepto || '';
             document.getElementById('deudorNotas').value = deuda.notas || '';
             
             // Cambiar botón a actualizar
@@ -563,7 +716,6 @@
                 deuda.monto = parseInt(document.getElementById('deudorMonto').value) || 0;
                 deuda.telefono = document.getElementById('deudorTelefono').value.trim();
                 deuda.fecha = document.getElementById('deudorFecha').value;
-                deuda.concepto = document.getElementById('deudorConcepto').value.trim();
                 deuda.notas = document.getElementById('deudorNotas').value.trim();
                 
                 actualizarEstadoDeuda(deuda);
@@ -637,4 +789,3 @@
 </body>
 
 </html>
-
