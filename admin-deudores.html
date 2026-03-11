@@ -95,6 +95,10 @@
                                 <input type="date" id="deudorFecha">
                             </div>
                             <div class="form-group">
+                                <label for="deudorConcepto">Concepto / Producto</label>
+                                <input type="text" id="deudorConcepto" placeholder="Ej: Crema hidratante, Serum...">
+                            </div>
+                            <div class="form-group">
                                 <label for="deudorNotas">Acuerdo de Pago / Notas</label>
                                 <textarea id="deudorNotas" rows="3" placeholder="Detalles del acuerdo..."></textarea>
                             </div>
@@ -111,8 +115,10 @@
                             <div class="admin-section-title" style="color: #2E7D32;">Registrar Abono</div>
                             <div style="margin-bottom: 12px; font-size: 0.95rem;">
                                 <strong id="abonoCliente"></strong><br>
+                                <span style="color: var(--text-muted);">Deuda: <strong id="abonoConcepto" style="color: var(--primary-dark);"></strong></span><br>
                                 <span style="color: var(--text-muted);">Pendiente: <strong id="abonoPendiente" style="color: #C95555;"></strong></span>
                             </div>
+                            <input type="hidden" id="abonoDeudaId">
                             <div class="form-group">
                                 <label for="abonoMonto">Monto del Abono (COP)</label>
                                 <input type="number" id="abonoMonto" placeholder="Cuanto paga ahora?" min="0" step="1000" required>
@@ -155,6 +161,479 @@
     </footer>
 
     <script src="scripts.js"></script>
+    <script>
+        // ============================================
+        // DEUDORES - DEUDAS INDEPENDIENTES
+        // ============================================
+        
+        // Variables globales para deudores
+        let deudasIndependientes = [];
+        let deudaSeleccionadaId = null;
+
+        // Cargar deudas al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar deudas del localStorage (nueva estructura)
+            const stored = localStorage.getItem('pb_deudas_independientes');
+            if (stored) {
+                try {
+                    deudasIndependientes = JSON.parse(stored);
+                } catch(e) {
+                    deudasIndependientes = [];
+                }
+            } else {
+                // Migrar datos antiguos si existen
+                migrarDatosAntiguos();
+            }
+            
+            // Setear fecha actual
+            const hoy = new Date().toISOString().split('T')[0];
+            const fechaInput = document.getElementById('deudorFecha');
+            if (fechaInput) fechaInput.value = hoy;
+            
+            renderizarDeudasIndependientes();
+            actualizarEstadisticasDeudas();
+            
+            // Inicializar búsqueda
+            const buscarInput = document.getElementById('buscarDeudor');
+            if (buscarInput) {
+                buscarInput.addEventListener('input', renderizarDeudasIndependientes);
+            }
+        });
+
+        // Migrar datos antiguos (deudores acumulados) a nueva estructura independiente
+        function migrarDatosAntiguos() {
+            const deudoresAntiguos = getDeudores(); // Función del scripts.js original
+            if (deudoresAntiguos && deudoresAntiguos.length > 0) {
+                deudoresAntiguos.forEach((d, index) => {
+                    deudasIndependientes.push({
+                        id: 'migrado_' + index + '_' + Date.now(),
+                        nombre: d.nombre,
+                        monto: parseInt(d.monto) || 0,
+                        telefono: d.telefono || '',
+                        fecha: d.fecha || new Date().toISOString().split('T')[0],
+                        concepto: d.notas || 'Deuda migrada',
+                        notas: d.notas || '',
+                        abonos: d.abonos || [],
+                        estado: d.estado || 'pendiente',
+                        fechaRegistro: new Date().toISOString()
+                    });
+                });
+                guardarDeudasIndependientes();
+                // Limpiar datos antiguos
+                localStorage.removeItem(CONFIG.STORAGE_KEYS.DEUDORES);
+            }
+        }
+
+        // Guardar en localStorage
+        function guardarDeudasIndependientes() {
+            localStorage.setItem('pb_deudas_independientes', JSON.stringify(deudasIndependientes));
+        }
+
+        // Calcular saldo pendiente
+        function calcularPendiente(deuda) {
+            if (!deuda.abonos || !Array.isArray(deuda.abonos)) return deuda.monto || 0;
+            const totalAbonos = deuda.abonos.reduce((sum, a) => sum + (parseInt(a.monto) || 0), 0);
+            return Math.max(0, (deuda.monto || 0) - totalAbonos);
+        }
+
+        // Actualizar estado
+        function actualizarEstadoDeuda(deuda) {
+            const pendiente = calcularPendiente(deuda);
+            if (pendiente <= 0) {
+                deuda.estado = 'pagada';
+            } else if (deuda.abonos && deuda.abonos.length > 0) {
+                deuda.estado = 'parcial';
+            } else {
+                deuda.estado = 'pendiente';
+            }
+        }
+
+        // Formulario de nueva deuda
+        document.getElementById('deudorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const monto = parseInt(document.getElementById('deudorMonto').value) || 0;
+            const nombre = document.getElementById('deudorNombre').value.trim();
+            
+            if (!nombre || monto <= 0) {
+                if (typeof utils !== 'undefined' && utils.showAlert) {
+                    utils.showAlert('Ingresa un nombre y monto válidos', 'warning');
+                } else {
+                    alert('Ingresa un nombre y monto válidos');
+                }
+                return;
+            }
+            
+            const nuevaDeuda = {
+                id: 'deuda_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                nombre: nombre,
+                monto: monto,
+                telefono: document.getElementById('deudorTelefono').value.trim(),
+                fecha: document.getElementById('deudorFecha').value || new Date().toISOString().split('T')[0],
+                concepto: document.getElementById('deudorConcepto').value.trim() || 'Sin concepto',
+                notas: document.getElementById('deudorNotas').value.trim(),
+                abonos: [],
+                estado: 'pendiente',
+                fechaRegistro: new Date().toISOString()
+            };
+            
+            deudasIndependientes.push(nuevaDeuda);
+            guardarDeudasIndependientes();
+            
+            // Limpiar formulario
+            this.reset();
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('deudorFecha').value = hoy;
+            
+            renderizarDeudasIndependientes();
+            actualizarEstadisticasDeudas();
+            
+            if (typeof utils !== 'undefined' && utils.showAlert) {
+                utils.showAlert('Deuda registrada correctamente', 'success');
+            }
+        });
+
+        // Renderizar lista de deudas (cada una independiente)
+        function renderizarDeudasIndependientes() {
+            const contenedor = document.getElementById('deudoresList');
+            const busqueda = document.getElementById('buscarDeudor').value.toLowerCase().trim();
+            
+            if (!contenedor) return;
+            
+            let deudasFiltradas = deudasIndependientes.filter(deuda => {
+                if (busqueda) {
+                    const nombre = (deuda.nombre || '').toLowerCase();
+                    const concepto = (deuda.concepto || '').toLowerCase();
+                    const telefono = (deuda.telefono || '').toLowerCase();
+                    return nombre.includes(busqueda) || concepto.includes(busqueda) || telefono.includes(busqueda);
+                }
+                return true;
+            });
+            
+            // Ordenar: pendientes primero, luego por fecha (más recientes)
+            deudasFiltradas.sort((a, b) => {
+                if (a.estado === 'pagada' && b.estado !== 'pagada') return 1;
+                if (a.estado !== 'pagada' && b.estado === 'pagada') return -1;
+                return new Date(b.fecha) - new Date(a.fecha);
+            });
+            
+            if (deudasFiltradas.length === 0) {
+                contenedor.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">' + 
+                    (busqueda ? 'No se encontraron deudas con ese criterio' : 'No hay deudas registradas') + '</p>';
+                return;
+            }
+            
+            // Agrupar visualmente por cliente pero mantener deudas independientes
+            const deudasPorCliente = {};
+            deudasFiltradas.forEach(d => {
+                const key = (d.nombre || 'Sin nombre').toLowerCase();
+                if (!deudasPorCliente[key]) {
+                    deudasPorCliente[key] = {
+                        nombre: d.nombre,
+                        deudas: []
+                    };
+                }
+                deudasPorCliente[key].deudas.push(d);
+            });
+            
+            contenedor.innerHTML = Object.values(deudasPorCliente).map(grupo => {
+                const totalCliente = grupo.deudas.reduce((sum, d) => sum + calcularPendiente(d), 0);
+                const deudasPendientes = grupo.deudas.filter(d => d.estado !== 'pagada').length;
+                
+                return `
+                    <div style="background: var(--secondary); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 2px solid var(--border);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
+                            <strong style="font-size: 1.1rem; color: var(--primary-dark);">${escapeHtml(grupo.nombre)}</strong>
+                            <div style="text-align: right;">
+                                <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.8rem; display: block; margin-bottom: 4px;">
+                                    ${grupo.deudas.length} deuda${grupo.deudas.length > 1 ? 's' : ''}
+                                </span>
+                                ${totalCliente > 0 ? `<span style="font-size: 0.85rem; color: #C95555; font-weight: 600;">Pendiente: ${formatoPesos(totalCliente)}</span>` : ''}
+                            </div>
+                        </div>
+                        ${grupo.deudas.map(d => {
+                            const pendiente = calcularPendiente(d);
+                            const totalAbonos = (d.monto || 0) - pendiente;
+                            const estaPagado = d.estado === 'pagada';
+                            
+                            return `
+                            <div style="background: white; padding: 12px; border-radius: var(--radius-md); margin-bottom: 10px; border: 1.5px solid var(--border); ${estaPagado ? 'opacity: 0.7; border-color: #7FB89A;' : ''}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; color: var(--primary-dark); margin-bottom: 2px;">
+                                            ${escapeHtml(d.concepto || 'Sin concepto')}
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: var(--text-muted);">
+                                            📅 ${formatearFecha(d.fecha)}
+                                            ${d.telefono ? `| 📞 ${escapeHtml(d.telefono)}` : ''}
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 700; color: ${estaPagado ? '#2E7D32' : '#C95555'}; font-size: 1.1rem;">
+                                            ${formatoPesos(d.monto || 0)}
+                                        </div>
+                                        ${totalAbonos > 0 ? `<div style="font-size: 0.8rem; color: #7FB89A;">-${formatoPesos(totalAbonos)}</div>` : ''}
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+                                    <span style="font-size: 0.9rem;">
+                                        <strong>Saldo:</strong> 
+                                        <span style="color: ${estaPagado ? '#2E7D32' : '#C95555'}; font-weight: 600;">
+                                            ${formatoPesos(pendiente)}
+                                        </span>
+                                        ${estaPagado ? '<span style="background: #7FB89A; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">PAGADO</span>' : ''}
+                                        ${(!estaPagado && d.estado === 'parcial') ? '<span style="background: #FFE082; color: #F57F17; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-left: 8px;">PARCIAL</span>' : ''}
+                                    </span>
+                                </div>
+                                
+                                ${d.notas ? `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border);"><em>${escapeHtml(d.notas)}</em></div>` : ''}
+                                
+                                ${d.abonos && d.abonos.length > 0 ? `
+                                    <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.8rem;">
+                                        <strong style="color: #7FB89A;">Historial de abonos:</strong>
+                                        ${d.abonos.map(a => `
+                                            <div style="display: flex; justify-content: space-between; margin-top: 3px; color: var(--text-muted);">
+                                                <span>${formatearFecha(a.fecha)} - ${escapeHtml(a.notas || 'Abono')}</span>
+                                                <span style="color: #2E7D32; font-weight: 500;">${formatoPesos(a.monto || 0)}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                                
+                                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                    ${!estaPagado ? `
+                                        <button onclick="abrirAbonoIndependiente('${d.id}')" style="flex: 1; padding: 8px; background: linear-gradient(135deg, #7FB89A 0%, #5A9A7A 100%); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Abonar</button>
+                                    ` : ''}
+                                    <button onclick="editarDeudaIndependiente('${d.id}')" style="padding: 8px 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Editar</button>
+                                    <button onclick="eliminarDeudaIndependiente('${d.id}')" style="padding: 8px 12px; background: #FFE5E5; color: #C95555; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.85rem;">Eliminar</button>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Abrir formulario de abono para deuda específica
+        function abrirAbonoIndependiente(deudaId) {
+            const deuda = deudasIndependientes.find(d => d.id === deudaId);
+            if (!deuda) return;
+            
+            deudaSeleccionadaId = deudaId;
+            const pendiente = calcularPendiente(deuda);
+            
+            document.getElementById('abonoDeudaId').value = deudaId;
+            document.getElementById('abonoCliente').textContent = deuda.nombre;
+            document.getElementById('abonoConcepto').textContent = deuda.concepto || 'Sin concepto';
+            document.getElementById('abonoPendiente').textContent = formatoPesos(pendiente);
+            
+            const montoInput = document.getElementById('abonoMonto');
+            montoInput.value = '';
+            montoInput.max = pendiente;
+            
+            document.getElementById('abonoNotas').value = '';
+            
+            const form = document.getElementById('abonoForm');
+            form.style.display = 'block';
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            setTimeout(() => montoInput.focus(), 100);
+        }
+
+        // Guardar abono
+        function guardarAbono() {
+            const monto = parseInt(document.getElementById('abonoMonto').value) || 0;
+            const notas = document.getElementById('abonoNotas').value.trim();
+            const deudaId = document.getElementById('abonoDeudaId').value;
+            
+            if (monto <= 0) {
+                if (typeof utils !== 'undefined' && utils.showAlert) {
+                    utils.showAlert('Ingresa un monto válido', 'error');
+                } else {
+                    alert('Ingresa un monto válido');
+                }
+                return;
+            }
+            
+            const deuda = deudasIndependientes.find(d => d.id === deudaId);
+            if (!deuda) {
+                cancelarAbono();
+                return;
+            }
+            
+            const pendiente = calcularPendiente(deuda);
+            
+            if (monto > pendiente) {
+                if (typeof utils !== 'undefined' && utils.showAlert) {
+                    utils.showAlert(`El abono no puede superar el monto pendiente (${formatoPesos(pendiente)})`, 'error');
+                } else {
+                    alert('El abono no puede superar el monto pendiente');
+                }
+                return;
+            }
+            
+            if (!deuda.abonos) deuda.abonos = [];
+            
+            deuda.abonos.push({
+                monto: monto,
+                notas: notas,
+                fecha: new Date().toISOString().split('T')[0],
+                fechaRegistro: new Date().toISOString()
+            });
+            
+            actualizarEstadoDeuda(deuda);
+            guardarDeudasIndependientes();
+            
+            // Registrar abono como venta
+            registrarAbonoComoVenta(deuda, monto, notas);
+            
+            cancelarAbono();
+            renderizarDeudasIndependientes();
+            actualizarEstadisticasDeudas();
+            
+            if (typeof utils !== 'undefined' && utils.showAlert) {
+                utils.showAlert('Abono registrado correctamente', 'success');
+            }
+        }
+
+        // Registrar abono como venta del día
+        function registrarAbonoComoVenta(deuda, monto, notas) {
+            const ventaAbono = {
+                fecha: new Date().toISOString().split('T')[0],
+                producto: 'Abono - ' + (deuda.concepto || 'Deuda'),
+                cantidad: 1,
+                precioUnitario: monto,
+                monto: monto,
+                cliente: deuda.nombre,
+                notas: notas ? 'Abono: ' + notas : 'Abono a deuda',
+                tipo: 'abono',
+                fechaRegistro: new Date().toISOString()
+            };
+            
+            // Usar función de ventas del scripts.js si existe
+            let ventas = [];
+            try {
+                ventas = JSON.parse(localStorage.getItem('pb_ventas')) || [];
+            } catch(e) {
+                ventas = [];
+            }
+            
+            ventas.push(ventaAbono);
+            localStorage.setItem('pb_ventas', JSON.stringify(ventas));
+            
+            // Actualizar vista de ventas si existe
+            if (typeof renderVentas === 'function') {
+                renderVentas();
+            }
+        }
+
+        // Cancelar abono
+        function cancelarAbono() {
+            document.getElementById('abonoForm').style.display = 'none';
+            deudaSeleccionadaId = null;
+        }
+
+        // Editar deuda independiente
+        function editarDeudaIndependiente(deudaId) {
+            const deuda = deudasIndependientes.find(d => d.id === deudaId);
+            if (!deuda) return;
+            
+            document.getElementById('deudorNombre').value = deuda.nombre;
+            document.getElementById('deudorMonto').value = deuda.monto;
+            document.getElementById('deudorTelefono').value = deuda.telefono || '';
+            document.getElementById('deudorFecha').value = deuda.fecha || '';
+            document.getElementById('deudorConcepto').value = deuda.concepto || '';
+            document.getElementById('deudorNotas').value = deuda.notas || '';
+            
+            // Cambiar botón a actualizar
+            const submitBtn = document.querySelector('#deudorForm button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Actualizar Deuda';
+            
+            // Modificar submit temporalmente
+            const form = document.getElementById('deudorForm');
+            const originalSubmit = form.onsubmit;
+            
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                
+                deuda.nombre = document.getElementById('deudorNombre').value.trim();
+                deuda.monto = parseInt(document.getElementById('deudorMonto').value) || 0;
+                deuda.telefono = document.getElementById('deudorTelefono').value.trim();
+                deuda.fecha = document.getElementById('deudorFecha').value;
+                deuda.concepto = document.getElementById('deudorConcepto').value.trim();
+                deuda.notas = document.getElementById('deudorNotas').value.trim();
+                
+                actualizarEstadoDeuda(deuda);
+                guardarDeudasIndependientes();
+                
+                form.reset();
+                const hoy = new Date().toISOString().split('T')[0];
+                document.getElementById('deudorFecha').value = hoy;
+                
+                submitBtn.textContent = originalText;
+                form.onsubmit = null; // Remover handler temporal
+                form.addEventListener('submit', arguments.callee); // Restaurar original
+                
+                renderizarDeudasIndependientes();
+                actualizarEstadisticasDeudas();
+                
+                if (typeof utils !== 'undefined' && utils.showAlert) {
+                    utils.showAlert('Deuda actualizada correctamente', 'success');
+                }
+            };
+            
+            form.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Eliminar deuda independiente
+        function eliminarDeudaIndependiente(deudaId) {
+            if (!confirm('¿Estás segura de eliminar esta deuda? Esta acción no se puede deshacer.')) return;
+            
+            deudasIndependientes = deudasIndependientes.filter(d => d.id !== deudaId);
+            guardarDeudasIndependientes();
+            
+            renderizarDeudasIndependientes();
+            actualizarEstadisticasDeudas();
+            
+            if (typeof utils !== 'undefined' && utils.showAlert) {
+                utils.showAlert('Deuda eliminada', 'success');
+            }
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticasDeudas() {
+            const totalPendiente = deudasIndependientes.reduce((sum, d) => sum + calcularPendiente(d), 0);
+            const totalEl = document.getElementById('totalDeuda');
+            if (totalEl) {
+                totalEl.textContent = formatoPesos(totalPendiente);
+            }
+        }
+
+        // Utilidades
+        function formatoPesos(valor) {
+            return '$' + (valor || 0).toLocaleString('es-CO');
+        }
+
+        function formatearFecha(fechaStr) {
+            if (!fechaStr) return 'Sin fecha';
+            try {
+                const fecha = new Date(fechaStr);
+                return fecha.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+            } catch(e) {
+                return fechaStr;
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
 </body>
 
 </html>
