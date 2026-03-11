@@ -12,6 +12,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #D4A5A5;
+            --primary-dark: #B88A8A;
+            --secondary: #F5E6E8;
+            --bg-soft: #FAF7F7;
+            --border: #E8D5D5;
+            --text-muted: #8B7E7E;
+            --font-heading: 'Playfair Display', serif;
+            --radius-md: 12px;
+        }
+        
         .deuda-item {
             background: var(--bg-soft);
             border: 2px solid var(--border);
@@ -157,6 +168,110 @@
             color: var(--text-muted);
             text-transform: uppercase;
         }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text-muted);
+        }
+        
+        .admin-section-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary-dark);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: var(--radius-md);
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.success { background: #4CAF50; }
+        .notification.error { background: #f44336; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
     </style>
 </head>
 
@@ -184,9 +299,9 @@
     <!-- Main Content -->
     <main class="container">
         <!-- Login Modal -->
-        <div id="loginModal" class="modal" style="display: none;">
+        <div id="loginModal" class="modal" style="display: flex;">
             <div class="modal-content">
-                <button id="closeLogin" class="modal-close">x</button>
+                <button id="closeLogin" class="modal-close">×</button>
                 <h3>Bienvenida, Yuliana</h3>
                 <p class="modal-subtitle">Ingresa tu contrasena para acceder.</p>
                 <form id="loginForm">
@@ -302,9 +417,9 @@
 
                         <!-- Filtros -->
                         <div class="filtros">
-                            <button class="filtro-btn active" onclick="filtrarDeudas('todas')">Todas</button>
-                            <button class="filtro-btn" onclick="filtrarDeudas('pendientes')">Pendientes</button>
-                            <button class="filtro-btn" onclick="filtrarDeudas('pagadas')">Pagadas</button>
+                            <button class="filtro-btn active" onclick="filtrarDeudas('todas', this)">Todas</button>
+                            <button class="filtro-btn" onclick="filtrarDeudas('pendientes', this)">Pendientes</button>
+                            <button class="filtro-btn" onclick="filtrarDeudas('pagadas', this)">Pagadas</button>
                         </div>
 
                         <!-- Buscador -->
@@ -339,33 +454,86 @@
 
     <script>
         // Variables globales
-        let deudas = JSON.parse(localStorage.getItem('purebeauty_deudas')) || [];
+        let deudas = [];
         let filtroActual = 'todas';
         let deudaSeleccionada = null;
+        let isAuthenticated = false;
 
-        // Inicializar fecha actual en los formularios
-        document.getElementById('deudorFecha').valueAsDate = new Date();
-        
-        // Cargar datos al iniciar
+        // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
+            // Cargar deudas del localStorage
+            const stored = localStorage.getItem('purebeauty_deudas');
+            if (stored) {
+                try {
+                    deudas = JSON.parse(stored);
+                } catch(e) {
+                    deudas = [];
+                }
+            }
+            
+            // Verificar si ya está autenticado
+            if (localStorage.getItem('purebeauty_admin_auth') === 'true') {
+                mostrarPanel();
+            }
+            
+            // Setear fecha actual
+            const hoy = new Date().toISOString().split('T')[0];
+            const fechaInput = document.getElementById('deudorFecha');
+            if (fechaInput) fechaInput.value = hoy;
+            
             renderizarDeudas();
             actualizarEstadisticas();
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const pass = document.getElementById('adminPass').value;
+            
+            // Contraseña simple (cámbiala según necesites)
+            if (pass === 'admin123' || pass === 'yuliana2024') {
+                localStorage.setItem('purebeauty_admin_auth', 'true');
+                mostrarPanel();
+                mostrarNotificacion('Bienvenida, Yuliana', 'success');
+            } else {
+                mostrarNotificacion('Contraseña incorrecta', 'error');
+            }
+        });
+
+        document.getElementById('closeLogin').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        function mostrarPanel() {
+            isAuthenticated = true;
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('headerLogout').style.display = 'block';
+            document.getElementById('statusText').textContent = 'Sesion activa';
+        }
+
+        // Logout
+        document.getElementById('headerLogout').addEventListener('click', function() {
+            localStorage.removeItem('purebeauty_admin_auth');
+            location.reload();
         });
 
         // Formulario de nueva deuda
         document.getElementById('deudorForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const monto = parseInt(document.getElementById('deudorMonto').value) || 0;
+            
             const nuevaDeuda = {
                 id: Date.now(),
                 cliente: document.getElementById('deudorNombre').value.trim(),
-                montoTotal: parseInt(document.getElementById('deudorMonto').value),
+                montoTotal: monto,
                 telefono: document.getElementById('deudorTelefono').value.trim(),
                 fecha: document.getElementById('deudorFecha').value,
                 concepto: document.getElementById('deudorConcepto').value.trim(),
                 notas: document.getElementById('deudorNotas').value.trim(),
                 abonos: [],
-                estado: 'pendiente', // pendiente, parcial, pagada
+                estado: 'pendiente',
                 fechaRegistro: new Date().toISOString()
             };
             
@@ -374,12 +542,11 @@
             
             // Limpiar formulario
             this.reset();
-            document.getElementById('deudorFecha').valueAsDate = new Date();
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('deudorFecha').value = hoy;
             
             renderizarDeudas();
             actualizarEstadisticas();
-            
-            // Mostrar notificación
             mostrarNotificacion('Deuda registrada correctamente', 'success');
         });
 
@@ -388,44 +555,46 @@
             localStorage.setItem('purebeauty_deudas', JSON.stringify(deudas));
         }
 
-        // Calcular saldo pendiente de una deuda
+        // Calcular saldo pendiente
         function calcularPendiente(deuda) {
-            const totalAbonos = deuda.abonos.reduce((sum, abono) => sum + abono.monto, 0);
+            if (!deuda.abonos || !Array.isArray(deuda.abonos)) return deuda.montoTotal;
+            const totalAbonos = deuda.abonos.reduce((sum, abono) => sum + (parseInt(abono.monto) || 0), 0);
             return deuda.montoTotal - totalAbonos;
         }
 
-        // Actualizar estado de la deuda
+        // Actualizar estado
         function actualizarEstado(deuda) {
             const pendiente = calcularPendiente(deuda);
             if (pendiente <= 0) {
                 deuda.estado = 'pagada';
-            } else if (deuda.abonos.length > 0) {
+            } else if (deuda.abonos && deuda.abonos.length > 0) {
                 deuda.estado = 'parcial';
             } else {
                 deuda.estado = 'pendiente';
             }
         }
 
-        // Renderizar lista de deudas
+        // Renderizar lista
         function renderizarDeudas() {
             const contenedor = document.getElementById('deudoresList');
-            const busqueda = document.getElementById('buscarDeudor').value.toLowerCase();
+            const busqueda = document.getElementById('buscarDeudor').value.toLowerCase().trim();
             
             let deudasFiltradas = deudas.filter(deuda => {
-                // Aplicar filtro de estado
+                // Filtro de estado
                 if (filtroActual === 'pendientes' && deuda.estado === 'pagada') return false;
                 if (filtroActual === 'pagadas' && deuda.estado !== 'pagada') return false;
                 
-                // Aplicar búsqueda
+                // Búsqueda
                 if (busqueda) {
-                    return deuda.cliente.toLowerCase().includes(busqueda) ||
-                           deuda.concepto.toLowerCase().includes(busqueda) ||
-                           deuda.telefono.includes(busqueda);
+                    const cliente = (deuda.cliente || '').toLowerCase();
+                    const concepto = (deuda.concepto || '').toLowerCase();
+                    const telefono = (deuda.telefono || '').toLowerCase();
+                    return cliente.includes(busqueda) || concepto.includes(busqueda) || telefono.includes(busqueda);
                 }
                 return true;
             });
             
-            // Ordenar: pendientes primero, luego por fecha (más recientes)
+            // Ordenar: pendientes primero, luego por fecha
             deudasFiltradas.sort((a, b) => {
                 if (a.estado === 'pagada' && b.estado !== 'pagada') return 1;
                 if (a.estado !== 'pagada' && b.estado === 'pagada') return -1;
@@ -439,18 +608,18 @@
             
             contenedor.innerHTML = deudasFiltradas.map(deuda => {
                 const pendiente = calcularPendiente(deuda);
-                const totalAbonos = deuda.abonos.reduce((sum, a) => sum + a.monto, 0);
+                const totalAbonos = deuda.montoTotal - pendiente;
                 
                 return `
                     <div class="deuda-item" data-id="${deuda.id}">
                         <div class="deuda-header">
                             <div>
-                                <div class="deuda-cliente">${escapeHtml(deuda.cliente)}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(deuda.concepto)}</div>
+                                <div class="deuda-cliente">${escapeHtml(deuda.cliente || 'Sin nombre')}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-muted);">${escapeHtml(deuda.concepto || 'Sin concepto')}</div>
                             </div>
                             <div style="text-align: right;">
                                 <div class="deuda-monto ${deuda.estado === 'pagada' ? 'pagada' : ''}">
-                                    ${formatoPesos(deuda.montoTotal)}
+                                    ${formatoPesos(deuda.montoTotal || 0)}
                                 </div>
                                 ${deuda.estado !== 'pagada' ? `<div style="font-size: 0.85rem; color: #C95555;">Pendiente: ${formatoPesos(pendiente)}</div>` : ''}
                             </div>
@@ -464,13 +633,13 @@
                         
                         ${deuda.notas ? `<div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 8px;"><em>${escapeHtml(deuda.notas)}</em></div>` : ''}
                         
-                        ${deuda.abonos.length > 0 ? `
+                        ${deuda.abonos && deuda.abonos.length > 0 ? `
                             <div class="abonos-lista">
                                 <strong>Abonos realizados:</strong>
                                 ${deuda.abonos.map(abono => `
                                     <div class="abono-item">
                                         <span>${formatearFecha(abono.fecha)} - ${escapeHtml(abono.notas || 'Abono')}</span>
-                                        <span style="color: #2E7D32; font-weight: 600;">${formatoPesos(abono.monto)}</span>
+                                        <span style="color: #2E7D32; font-weight: 600;">${formatoPesos(abono.monto || 0)}</span>
                                     </div>
                                 `).join('')}
                                 <div class="abono-item" style="border-top: 1px solid var(--border); margin-top: 5px; padding-top: 5px;">
@@ -494,27 +663,34 @@
         // Mostrar formulario de abono
         function mostrarFormularioAbono(deudaId) {
             const deuda = deudas.find(d => d.id === deudaId);
-            if (!deuda) return;
+            if (!deuda) {
+                mostrarNotificacion('Deuda no encontrada', 'error');
+                return;
+            }
             
             deudaSeleccionada = deuda;
             const pendiente = calcularPendiente(deuda);
             
             document.getElementById('abonoDeudaId').value = deudaId;
-            document.getElementById('abonoCliente').textContent = deuda.cliente;
-            document.getElementById('abonoConcepto').textContent = deuda.concepto;
+            document.getElementById('abonoCliente').textContent = deuda.cliente || 'Cliente';
+            document.getElementById('abonoConcepto').textContent = deuda.concepto || 'Sin concepto';
             document.getElementById('abonoPendiente').textContent = formatoPesos(pendiente);
-            document.getElementById('abonoMonto').value = '';
-            document.getElementById('abonoMonto').max = pendiente;
-            document.getElementById('abonoNotas').value = '';
-            document.getElementById('abonoFecha').valueAsDate = new Date();
             
-            document.getElementById('abonoForm').style.display = 'block';
-            document.getElementById('abonoForm').scrollIntoView({ behavior: 'smooth' });
+            const montoInput = document.getElementById('abonoMonto');
+            montoInput.value = '';
+            montoInput.max = pendiente;
+            
+            document.getElementById('abonoNotas').value = '';
+            document.getElementById('abonoFecha').value = new Date().toISOString().split('T')[0];
+            
+            const form = document.getElementById('abonoForm');
+            form.style.display = 'block';
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         // Guardar abono
         function guardarAbono() {
-            const monto = parseInt(document.getElementById('abonoMonto').value);
+            const monto = parseInt(document.getElementById('abonoMonto').value) || 0;
             const fecha = document.getElementById('abonoFecha').value;
             const notas = document.getElementById('abonoNotas').value.trim();
             const deudaId = parseInt(document.getElementById('abonoDeudaId').value);
@@ -525,7 +701,10 @@
             }
             
             const deuda = deudas.find(d => d.id === deudaId);
-            if (!deuda) return;
+            if (!deuda) {
+                mostrarNotificacion('Deuda no encontrada', 'error');
+                return;
+            }
             
             const pendiente = calcularPendiente(deuda);
             
@@ -533,6 +712,8 @@
                 mostrarNotificacion(`El abono no puede superar el monto pendiente (${formatoPesos(pendiente)})`, 'error');
                 return;
             }
+            
+            if (!deuda.abonos) deuda.abonos = [];
             
             deuda.abonos.push({
                 monto: monto,
@@ -570,14 +751,12 @@
         }
 
         // Filtrar deudas
-        function filtrarDeudas(tipo) {
+        function filtrarDeudas(tipo, btn) {
             filtroActual = tipo;
             
             // Actualizar botones
-            document.querySelectorAll('.filtro-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
             
             renderizarDeudas();
         }
@@ -598,52 +777,40 @@
 
         // Utilidades
         function formatoPesos(valor) {
-            return '$' + valor.toLocaleString('es-CO');
+            return '$' + (valor || 0).toLocaleString('es-CO');
         }
 
         function formatearFecha(fechaStr) {
-            const fecha = new Date(fechaStr);
-            return fecha.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+            if (!fechaStr) return 'Sin fecha';
+            try {
+                const fecha = new Date(fechaStr);
+                return fecha.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+            } catch(e) {
+                return fechaStr;
+            }
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
         function mostrarNotificacion(mensaje, tipo) {
-            // Crear notificación temporal
+            // Remover notificaciones anteriores
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            
             const notif = document.createElement('div');
-            notif.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 25px;
-                border-radius: 8px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-                ${tipo === 'success' ? 'background: #4CAF50;' : 'background: #f44336;'}
-            `;
+            notif.className = `notification ${tipo}`;
             notif.textContent = mensaje;
             document.body.appendChild(notif);
             
             setTimeout(() => {
-                notif.remove();
+                notif.style.opacity = '0';
+                setTimeout(() => notif.remove(), 300);
             }, 3000);
         }
-
-        // Agregar animación CSS
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 
