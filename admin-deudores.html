@@ -364,8 +364,8 @@
                                             ${escapeHtml(d.concepto || 'Sin concepto')}
                                         </div>
                                         <div style="font-size: 0.85rem; color: var(--text-muted);">
-                                            📅 ${formatearFecha(d.fecha)}
-                                            ${d.telefono ? `| 📞 ${escapeHtml(d.telefono)}` : ''}
+                                            ${formatearFecha(d.fecha)}
+                                            ${d.telefono ? `| ${escapeHtml(d.telefono)}` : ''}
                                         </div>
                                     </div>
                                     <div style="text-align: right;">
@@ -637,3 +637,4 @@
 </body>
 
 </html>
+
