@@ -184,36 +184,84 @@
 
     <script src="scripts.js"></script>
     <script>
-        function enviarWhatsApp(event) {
-            event.preventDefault();
-            
-            const nombre = document.getElementById('name').value;
-            const asunto = document.getElementById('subject').value;
-            const mensaje = document.getElementById('message').value;
-            
-            const asuntoTexto = {
-                'pedido': 'Realizar un Pedido',
-                'consulta': 'Consulta de Producto',
-                'asesoria': 'Asesoria Personalizada',
-                'otro': 'Otro'
-            }[asunto];
-            
-            let texto = `Hola Yuliana.\n\n`;
-            texto += `*Nombre:* ${nombre}\n`;
-            texto += `*Asunto:* ${asuntoTexto}\n\n`;
-            texto += `*Mensaje:*\n${mensaje}`;
-            
-            const url = 'https://wa.me/573148849151?text=' + encodeURIComponent(texto);
-            window.open(url, '_blank');
-            
-            // Mostrar mensaje de confirmacion
-            document.getElementById('feedback').style.display = 'block';
-            document.getElementById('contactForm').reset();
-            
-            setTimeout(() => {
-                document.getElementById('feedback').style.display = 'none';
-            }, 5000);
-        }
+        // ============================================
+// FORMULARIO DE CONTACTO POR WHATSAPP
+// ============================================
+
+function initContactForm() {
+    const form = document.getElementById('contactForm');
+    
+    if (!form) return;
+    
+    form.addEventListener('submit', enviarWhatsApp);
+}
+
+function enviarWhatsApp(event) {
+    event.preventDefault();
+    
+    const nombre = document.getElementById('name').value.trim();
+    const asunto = document.getElementById('subject').value.trim();
+    const mensaje = document.getElementById('message').value.trim();
+    
+    // Validación
+    if (!nombre || !asunto || !mensaje) {
+        showFeedback('Por favor completa todos los campos', 'error');
+        return;
+    }
+    
+    // Convertir valor del select a texto legible
+    const asuntoTexto = {
+        'pedido': 'Realizar un Pedido',
+        'consulta': 'Consulta de Producto',
+        'asesoria': 'Asesoría Personalizada',
+        'otro': 'Otro'
+    }[asunto] || 'No especificado';
+    
+    // Fecha actual
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-CO', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric'
+    }) + ' ' + now.toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Construir mensaje para WhatsApp
+    let whatsappMessage = `*PURE BEAUTY - NUEVO MENSAJE*%0A`;
+    whatsappMessage += `Fecha: ${dateStr}%0A`;
+    whatsappMessage += `--------------------------------%0A%0A`;
+    whatsappMessage += `*Nombre:* ${nombre}%0A`;
+    whatsappMessage += `*Asunto:* ${asuntoTexto}%0A%0A`;
+    whatsappMessage += `*Mensaje:*%0A${mensaje}%0A%0A`;
+    whatsappMessage += `--------------------------------%0A`;
+    whatsappMessage += `Enviado desde la página web de Pure Beauty`;
+    
+    // Abrir WhatsApp
+    window.open('https://wa.me/573148849151?text=' + whatsappMessage, '_blank');
+    
+    // Mostrar feedback y limpiar formulario
+    showFeedback('Mensaje enviado correctamente. Te responderemos pronto.', 'success');
+    document.getElementById('contactForm').reset();
+}
+
+function showFeedback(message, type) {
+    const feedback = document.getElementById('feedback');
+    if (!feedback) return;
+    
+    feedback.textContent = message;
+    feedback.className = 'alert ' + type;
+    
+    // Mostrar por 5 segundos
+    setTimeout(() => {
+        feedback.className = 'alert';
+    }, 5000);
+}
+
+// Inicializar cuando cargue la página
+document.addEventListener('DOMContentLoaded', initContactForm);
     </script>
 </body>
 
