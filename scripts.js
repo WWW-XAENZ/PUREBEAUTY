@@ -8,8 +8,8 @@
 // ============================================
 
 const CONFIG = {
-    SUPABASE_URL: 'https://mnibviznwpveyvfknatt.supabase.co',
-    SUPABASE_KEY: 'sb_publishable_CXGRsFZOph8h4iJy88O_2g_pnYFl72j',
+    SUPABASE_URL: 'https://netivlrrsqohaicmnbgm.supabase.co',
+    SUPABASE_KEY: 'sb_publishable_slF2yzidBsLnaKFN08fA3A_ZSm3R5ZY',
     ADMIN_PASS: 'Yuli1036@',
     WHATSAPP_NUMBER: '573148849151',
     
